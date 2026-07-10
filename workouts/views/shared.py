@@ -335,7 +335,7 @@ EXERCISE_REGISTRY = {
     }
 }
 
-# Derived EXERCISE_CATALOG to maintain backward compatibility
+# Derived EXERCISE_CATALOG to maintain backward compatibility with legacy name-matching views
 EXERCISE_CATALOG = {details["name"]: details["aliases"] for details in EXERCISE_REGISTRY.values()}
 
 
