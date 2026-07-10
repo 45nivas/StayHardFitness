@@ -120,3 +120,11 @@ Stay_hard_fitness/
 - **Google MediaPipe**: Fast and precise pose landmark calculations.
 - **OpenCV**: Resilient video capture and stream processing.
 - **Django**: The ultra-secure, rapid-development backend.
+
+---
+
+## 📷 Camera Troubleshooting
+If your webcam does not turn on during pose tracking and shows "Camera Connection Offline":
+1. **Application Lock**: Close other programs that might be using the webcam (e.g. Chrome, Discord, Teams, Zoom, or the Windows Camera app) as most operating systems only allow one program to capture video at a time.
+2. **Privacy Permissions**: Ensure camera access is allowed for desktop applications in your system's privacy settings (Settings ➔ Privacy ➔ Camera on Windows).
+3. **Docker Limitations**: Note that Docker containers on Windows/macOS cannot access physical webcams natively without USB forwarding configurations. For webcam support, run the application natively on your host machine.
