@@ -98,6 +98,7 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5
 def workout_stats_api(request):
     """API to fetch the active user's workout statistics from the global coordinator."""
     user_id = request.user.id
+    # Thread-safe read access to the global WORKOUT_STATS telemetry registry
     with WORKOUT_STATS_LOCK:
         stats = WORKOUT_STATS.get(user_id, {
             'workout_name': 'None',
