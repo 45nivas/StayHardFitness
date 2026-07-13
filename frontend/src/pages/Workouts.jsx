@@ -15,7 +15,7 @@ import {
   Flame
 } from 'lucide-react';
 import axios from 'axios';
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import Chart from 'chart.js/auto';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -69,10 +69,11 @@ export default function Workouts() {
 
   // PR progression modal states
   const [prModalOpen, setPrModalOpen] = useState(false);
-  const [prModalExercise, setPrModalExercise] = useState('');
-  const [prModalData, setPrModalData] = useState(null);
-  const [prModalTab, setPrModalTab] = useState('e1rm');
-  const [loadingPRData, setLoadingPRData] = useState(false);
+  const [prExercise, setPrExercise] = useState('');
+  const [prData, setPrData] = useState(null);
+  const [prActiveTab, setPrActiveTab] = useState('e1rm');
+  const prChartRef = useRef(null);
+  const prChartInstance = useRef(null);
 
   // Exercise picker state
   const [focusedExerciseIdx, setFocusedExerciseIdx] = useState(null);
@@ -114,23 +115,149 @@ export default function Workouts() {
         displayName = found.name;
       }
     }
-    setPrModalExercise(displayName);
+    setPrExercise(displayName);
+    setPrData(null);
     setPrModalOpen(true);
-    setLoadingPRData(true);
-    setPrModalData(null);
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/exercise-progress/${encodeURIComponent(exerciseIdOrName)}/`);
-      if (res.data.success) {
-        setPrModalData(res.data);
-      } else {
-        console.error("Failed to load PR progress data");
-      }
+      const encoded = encodeURIComponent(displayName);
+      const res  = await fetch(`${API_BASE_URL}/api/exercise-pr/${encoded}/`);
+      const data = await res.json();
+      setPrData(data);
+      setPrActiveTab('e1rm');
     } catch (err) {
-      console.error("Error loading PR progress data", err);
-    } finally {
-      setLoadingPRData(false);
+      console.error('PR fetch error:', err);
     }
   };
+
+  const handleClosePRModal = () => {
+    setPrModalOpen(false);
+    if (prChartInstance.current) {
+      prChartInstance.current.destroy();
+      prChartInstance.current = null;
+    }
+    setPrData(null);
+  };
+
+  useEffect(() => {
+    if (!prData || !prChartRef.current) return;
+    
+    if (prChartInstance.current) {
+      prChartInstance.current.destroy();
+      prChartInstance.current = null;
+    }
+
+    const history = prData.history || [];
+    if (history.length === 0) return;
+
+    const PR_DATASET_CONFIGS = {
+      e1rm: {
+        label: 'Estimated 1RM (kg)',
+        dataKey: 'e1rm',
+        color: '#a78bfa',
+        yLabel: 'e1RM (kg)',
+      },
+      weight: {
+        label: 'Best Weight (kg)',
+        dataKey: 'best_weight',
+        color: '#34d399',
+        yLabel: 'Weight (kg)',
+      },
+      volume: {
+        label: 'Session Volume (kg)',
+        dataKey: 'volume',
+        color: '#60a5fa',
+        yLabel: 'Volume (kg)',
+      },
+    };
+
+    const cfg = PR_DATASET_CONFIGS[prActiveTab];
+    const ctx = prChartRef.current.getContext('2d');
+    
+    prChartInstance.current = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: history.map(d => d.date),
+        datasets: [{
+          label: cfg.label,
+          data: history.map(d => d[cfg.dataKey]),
+          borderColor: cfg.color,
+          backgroundColor: cfg.color + '14',  // 8% opacity fill
+          borderWidth: 2.5,
+          tension: 0.35,
+          fill: true,
+          pointRadius: history.map(d => d.is_pr ? 8 : 4),
+          pointBackgroundColor: history.map(d =>
+            d.is_pr ? '#f59e0b' : cfg.color
+          ),
+          pointBorderColor: history.map(d =>
+            d.is_pr ? '#f59e0b' : 'transparent'
+          ),
+          pointBorderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400, easing: 'easeInOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => {
+                const d = history[items[0].dataIndex];
+                return d.date_full;
+              },
+              label: (item) => {
+                const d = history[item.dataIndex];
+                const pr = d.is_pr ? '  🏆 PR' : '';
+                if (prActiveTab === 'e1rm') {
+                  return [
+                    `Est. 1RM: ${d.e1rm} kg${pr}`,
+                    `Best Set: ${d.best_weight}kg × ${d.best_reps} reps`,
+                  ];
+                } else if (prActiveTab === 'weight') {
+                  return [
+                    `Best Weight: ${d.best_weight} kg${pr}`,
+                    `Reps: ${d.best_reps}`,
+                  ];
+                } else {
+                  return [`Volume: ${d.volume} kg${pr}`];
+                }
+              }
+            },
+            backgroundColor: '#1e1b4b',
+            borderColor: '#a78bfa',
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 8,
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#94a3b8', font: { size: 10 } }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#94a3b8', font: { size: 10 } },
+            title: {
+              display: true,
+              text: cfg.yLabel,
+              color: '#475569',
+              font: { size: 10 }
+            }
+          }
+        }
+      }
+    });
+
+    return () => {
+      if (prChartInstance.current) {
+        prChartInstance.current.destroy();
+        prChartInstance.current = null;
+      }
+    };
+  }, [prData, prActiveTab]);
 
   const navigate = useNavigate();
   const recognitionRef = useRef(null);
@@ -1009,17 +1136,18 @@ export default function Workouts() {
       {/* PR Progress Modal */}
       <AnimatePresence>
         {prModalOpen && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={handleClosePRModal}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 text-white shadow-2xl relative flex flex-col overflow-hidden"
               style={{ width: '480px' }}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
-                onClick={() => setPrModalOpen(false)}
+                onClick={handleClosePRModal}
                 className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer font-bold text-sm"
               >
                 ✕
@@ -1031,13 +1159,13 @@ export default function Workouts() {
                   Strength Progression
                 </span>
                 <h3 className="text-xl font-black text-white m-0 uppercase tracking-tight">
-                  {prModalExercise}
+                  {prExercise}
                 </h3>
-                {prModalData && (
+                {prData && (
                   <div className="mt-2.5 flex items-center">
                     <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center space-x-1">
                       <span>🏆 Current PR:</span>
-                      <span className="text-white font-bold">{prModalData.current_pr_e1rm} kg</span>
+                      <span className="text-white font-bold">{prData.current_pr_e1rm} kg</span>
                       <span className="text-slate-400 font-semibold normal-case">e1RM</span>
                     </span>
                   </div>
@@ -1053,9 +1181,9 @@ export default function Workouts() {
                 ].map(tab => (
                   <button
                     key={tab.id}
-                    onClick={() => setPrModalTab(tab.id)}
+                    onClick={() => setPrActiveTab(tab.id)}
                     className={`flex-1 py-1.5 text-center text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
-                      prModalTab === tab.id
+                      prActiveTab === tab.id
                         ? 'bg-purple-650 text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
@@ -1067,99 +1195,18 @@ export default function Workouts() {
 
               {/* Main Body / Graph */}
               <div className="h-[220px] flex items-center justify-center relative bg-slate-950/20 border border-slate-850/50 rounded-2xl p-4">
-                {loadingPRData ? (
+                {prData ? (
+                  prData.history && prData.history.length > 0 ? (
+                    <canvas ref={prChartRef}></canvas>
+                  ) : (
+                    <div className="text-center py-8 text-xs text-slate-400 font-semibold">
+                      No history found for this exercise.
+                    </div>
+                  )
+                ) : (
                   <div className="flex flex-col items-center space-y-2">
                     <Loader2 className="w-6 h-6 animate-spin text-purple-450" />
                     <p className="text-xs text-slate-500 font-semibold">Retrieving telemetry data...</p>
-                  </div>
-                ) : prModalData && prModalData.history && prModalData.history.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={prModalData.history}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorPr" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.16}/>
-                          <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.0}/>
-                        </linearGradient>
-                      </defs>
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#475569" 
-                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        stroke="#475569"
-                        tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
-                        axisLine={false}
-                        tickLine={false}
-                        domain={['dataMin - 5', 'dataMax + 5']}
-                        unit=" kg"
-                      />
-                      <RechartsTooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const d = payload[0].payload;
-                            return (
-                              <div className="bg-slate-950 border border-purple-500/30 p-3 rounded-xl shadow-2xl text-[11px] text-slate-200">
-                                <p className="font-bold text-slate-400 mb-1 text-[10px]">{d.date_full}</p>
-                                <p className="font-black text-purple-300 flex items-center space-x-1">
-                                  <span>
-                                    {prModalTab === 'e1rm' && `Est. 1RM: ${d.e1rm} kg`}
-                                    {prModalTab === 'best_weight' && `Best Weight: ${d.best_weight} kg`}
-                                    {prModalTab === 'volume' && `Volume: ${d.volume} kg`}
-                                  </span>
-                                  {d.is_pr && <span className="text-amber-500 ml-1">🏆 PR</span>}
-                                </p>
-                                <p className="text-[9px] text-slate-500 mt-1 font-semibold">
-                                  Best Set: {d.best_weight}kg × {d.best_reps} reps
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey={prModalTab}
-                        stroke="#a78bfa"
-                        strokeWidth={2.5}
-                        fillOpacity={1}
-                        fill="url(#colorPr)"
-                        dot={(props) => {
-                          const { cx, cy, payload } = props;
-                          if (!cx || !cy) return null;
-                          const isPr = payload.is_pr;
-                          return (
-                            <circle
-                              key={props.index}
-                              cx={cx}
-                              cy={cy}
-                              r={isPr ? 6 : 3.5}
-                              fill={isPr ? "#f59e0b" : "#a78bfa"}
-                              stroke={isPr ? "#f59e0b" : "transparent"}
-                              strokeWidth={1.5}
-                              className="cursor-pointer"
-                            />
-                          );
-                        }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="text-center py-8 text-xs text-slate-400 font-semibold">
-                    No history found for this exercise.
-                  </div>
-                )}
-                
-                {/* One data point hint */}
-                {!loadingPRData && prModalData && prModalData.history && prModalData.history.length === 1 && (
-                  <div className="absolute bottom-2 right-2 bg-slate-950/80 text-[9px] text-amber-500/90 font-bold px-2 py-0.5 rounded-lg border border-amber-500/10 animate-pulse">
-                    Keep training to unlock trends!
                   </div>
                 )}
               </div>
@@ -1170,9 +1217,9 @@ export default function Workouts() {
                   <span>🏆</span>
                   <span>= Personal Record session</span>
                 </span>
-                {prModalData && prModalData.history && (
+                {prData && prData.history && (
                   <span>
-                    {prModalData.history.length} session{prModalData.history.length > 1 ? 's' : ''} tracked
+                    {prData.history.length} session{prData.history.length > 1 ? 's' : ''} tracked
                   </span>
                 )}
               </div>

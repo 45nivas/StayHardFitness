@@ -497,3 +497,148 @@ select option {
 #videoModalClose:hover { color: #e2e8f0; }
 
 
+/* --- ADDED: PR Graph Modal --- */
+#prModalOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(8px);
+  z-index: 9998;
+  align-items: center;
+  justify-content: center;
+}
+#prModalOverlay.active { display: flex; }
+
+#prModalCard {
+  background: rgba(15, 12, 41, 0.95);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 18px;
+  padding: 24px;
+  width: min(560px, 94vw);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+  position: relative;
+}
+
+#prModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+#prExerciseTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-transform: capitalize;
+}
+
+#prCurrentBadge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 999px;
+  padding: 3px 12px;
+  white-space: nowrap;
+}
+
+#prSessionCount {
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 14px;
+}
+
+/* Toggle tabs: Est. 1RM / Best Weight / Volume */
+#prToggleRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.pr-tab {
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid rgba(167,139,250,0.25);
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pr-tab.active {
+  background: #a78bfa;
+  border-color: #a78bfa;
+  color: #fff;
+}
+.pr-tab:hover:not(.active) {
+  border-color: #a78bfa;
+  color: #a78bfa;
+}
+
+#prChartContainer {
+  position: relative;
+  height: 220px;
+  margin-bottom: 12px;
+}
+
+#prChartEmpty {
+  display: none;
+  text-align: center;
+  padding: 60px 20px;
+  color: #475569;
+  font-size: 13px;
+}
+
+#prModalLegend {
+  font-size: 10px;
+  color: #334155;
+  text-align: right;
+  margin-top: 4px;
+}
+
+#prModalClose {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+  line-height: 1;
+}
+#prModalClose:hover { color: #e2e8f0; }
+
+/* Exercise name in ledger — make it clickable */
+.exercise-name-clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.exercise-name-clickable:hover {
+  color: #a78bfa;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* PR badge that appears inline next to exercise in ledger */
+.pr-badge-inline {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+
+

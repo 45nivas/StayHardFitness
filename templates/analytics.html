@@ -248,7 +248,11 @@
             {% for log in recent_logs %}
               <tr>
                 <td style="font-weight: 700;">
-                  <span class="exercise-name">{{ log.exercise_name }}</span>
+                  <span
+                    class="exercise-name exercise-name-clickable"
+                    onclick="openPRModal('{{ log.exercise_name|lower }}')"
+                    title="View progress for {{ log.exercise_name }}"
+                  >{{ log.exercise_name }}</span>
                   <button 
                     class="video-btn" 
                     onclick="openVideoModal('{{ log.exercise_name|lower }}')"
