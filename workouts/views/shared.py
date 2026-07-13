@@ -503,3 +503,51 @@ def get_exercise_pr_history(user, exercise_id_or_name, limit=20):
 
     return history, all_time_best_e1rm
 
+
+# --- ADDED: Exercise Video Feature ---
+EXERCISE_VIDEOS = {
+    "bench press": "https://www.youtube.com/embed/rT7DgCr-3pg",
+    "incline bench press": "https://www.youtube.com/embed/DbFgADa2PL8",
+    "decline bench press": "https://www.youtube.com/embed/LfyQBUKR8SE",
+    "chest fly": "https://www.youtube.com/embed/eozdVDA78K0",
+    "push ups": "https://www.youtube.com/embed/IODxDxX7oi4",
+    "dips": "https://www.youtube.com/embed/2z8JmcrW-As",
+    "squat": "https://www.youtube.com/embed/ultWZbUMPL8",
+    "leg press": "https://www.youtube.com/embed/IZxyjW7MPJQ",
+    "lunges": "https://www.youtube.com/embed/QOVaHwm-Q6U",
+    "romanian deadlift": "https://www.youtube.com/embed/JCXUYuzwNrM",
+    "calf raises": "https://www.youtube.com/embed/gwLzBJYoWlI",
+    "deadlift": "https://www.youtube.com/embed/op9kVnSso6Q",
+    "pull ups": "https://www.youtube.com/embed/eGo4IYlbE5g",
+    "lat pulldown": "https://www.youtube.com/embed/CAwf7n6Luuc",
+    "rows": "https://www.youtube.com/embed/FWJR5Ve8bnQ",
+    "barbell row": "https://www.youtube.com/embed/FWJR5Ve8bnQ",
+    "shoulder press": "https://www.youtube.com/embed/qEwKCR5JCog",
+    "overhead press": "https://www.youtube.com/embed/2yjwXTZQDDI",
+    "lateral raise": "https://www.youtube.com/embed/3VcKaXpzqRo",
+    "front raise": "https://www.youtube.com/embed/sOgCpBUfRSM",
+    "bicep curl": "https://www.youtube.com/embed/ykJmrZ5v0Oo",
+    "hammer curl": "https://www.youtube.com/embed/zC3nLlEvin4",
+    "preacher curl": "https://www.youtube.com/embed/fIWP-FRFNU0",
+    "tricep pushdown": "https://www.youtube.com/embed/2-LAMcpzODU",
+    "skull crusher": "https://www.youtube.com/embed/d_KZxkY_0cM",
+    "tricep extension": "https://www.youtube.com/embed/nRiJVZDpdL0",
+    "plank": "https://www.youtube.com/embed/pSHjTRCQxIw",
+    "crunches": "https://www.youtube.com/embed/Xyd_fa5zoEU",
+    "leg raises": "https://www.youtube.com/embed/JB2oyawG9KI",
+}
+
+def get_exercise_video_url(exercise_name: str) -> str | None:
+    """
+    Case-insensitive partial match.
+    Returns YouTube embed URL or None if not found.
+    Tries longest key match first to avoid 'press' matching 'bench press'.
+    """
+    name_lower = exercise_name.lower().strip()
+    # sort by key length descending so longer/more specific keys match first
+    for key in sorted(EXERCISE_VIDEOS.keys(), key=len, reverse=True):
+        if key in name_lower:
+            return EXERCISE_VIDEOS[key]
+    return None
+
+

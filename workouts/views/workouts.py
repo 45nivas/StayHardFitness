@@ -1614,6 +1614,27 @@ def exercise_progress_api(request, exercise_name):
     })
 
 
+# --- ADDED: Exercise Video Feature ---
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .shared import get_exercise_video_url
+
+@login_required
+def exercise_video_api(request, exercise_name):
+    """
+    GET /api/exercise-video/<exercise_name>/
+    Returns YouTube embed URL for the given exercise name.
+    Used by frontend to show form video button next to each exercise.
+    """
+    video_url = get_exercise_video_url(exercise_name)
+    return JsonResponse({
+        "exercise": exercise_name,
+        "video_url": video_url,
+        "found": video_url is not None
+    })
+
+
+
 
 
 

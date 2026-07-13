@@ -827,5 +827,35 @@ class VoiceWorkoutLoggerTestCase(TestCase):
         self.assertEqual(logs[1].reps, 12)
 
 
+    def test_exercise_video_api(self):
+        # 1. Login user
+        self.client.login(username=self.username, password=self.password)
+        
+        # 2. Test exact match
+        url = reverse('exercise_video_api', kwargs={'exercise_name': 'bench press'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        res_data = response.json()
+        self.assertTrue(res_data['found'])
+        self.assertEqual(res_data['video_url'], "https://www.youtube.com/embed/rT7DgCr-3pg")
+        
+        # 3. Test partial/case-insensitive match
+        url = reverse('exercise_video_api', kwargs={'exercise_name': 'InClInE BeNcH PrEsS'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        res_data = response.json()
+        self.assertTrue(res_data['found'])
+        self.assertEqual(res_data['video_url'], "https://www.youtube.com/embed/DbFgADa2PL8")
+        
+        # 4. Test not found match
+        url = reverse('exercise_video_api', kwargs={'exercise_name': 'unknown exercise'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        res_data = response.json()
+        self.assertFalse(res_data['found'])
+        self.assertIsNone(res_data['video_url'])
+
+
+
 
 

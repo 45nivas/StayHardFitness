@@ -52,4 +52,7 @@ urlpatterns = [
     path('api/get-workouts/', views.api_get_workout_logs, name='api_get_workout_logs'),
     path('api/delete-workout/', views.api_delete_workout_log, name='api_delete_workout_log'),
     path('api/exercise-progress/<str:exercise_name>/', views.exercise_progress_api, name='exercise_progress_api'),
+    # --- ADDED: Exercise Video Feature ---
+    path('api/exercise-video/<str:exercise_name>/', views.exercise_video_api, name='exercise_video_api'),
 ]
+
