@@ -101,6 +101,11 @@ export default function Workouts() {
     }
   };
 
+  const handleCloseVideoModal = () => {
+    setVideoModalOpen(false);
+    setVideoModalUrl('');
+  };
+
   const handleOpenPRModal = async (exerciseIdOrName) => {
     let displayName = exerciseIdOrName;
     if (typeof exerciseIdOrName === 'number' || !isNaN(Number(exerciseIdOrName))) {
@@ -1179,7 +1184,7 @@ export default function Workouts() {
       {/* Video Modal */}
       <AnimatePresence>
         {videoModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setVideoModalOpen(false)}>
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleCloseVideoModal}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1188,7 +1193,7 @@ export default function Workouts() {
               onClick={(e) => e.stopPropagation()}
             >
               <button 
-                onClick={() => setVideoModalOpen(false)}
+                onClick={handleCloseVideoModal}
                 className="absolute top-3.5 right-4 text-slate-500 hover:text-slate-200 text-xl font-bold bg-transparent border-none cursor-pointer p-1"
               >
                 ✕
