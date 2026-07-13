@@ -77,6 +77,30 @@ export default function Workouts() {
   // Exercise picker state
   const [focusedExerciseIdx, setFocusedExerciseIdx] = useState(null);
 
+  // --- ADDED: Exercise Video Feature ---
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [videoModalExercise, setVideoModalExercise] = useState('');
+  const [videoModalUrl, setVideoModalUrl] = useState('');
+  const [videoNoResult, setVideoNoResult] = useState(false);
+
+  const handleOpenVideoModal = async (exerciseName) => {
+    setVideoModalExercise(exerciseName);
+    setVideoModalOpen(true);
+    setVideoModalUrl('');
+    setVideoNoResult(false);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/exercise-video/${encodeURIComponent(exerciseName)}/`);
+      if (res.data.success && res.data.found) {
+        setVideoModalUrl(res.data.video_url + '?autoplay=1&rel=0');
+      } else {
+        setVideoNoResult(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setVideoNoResult(true);
+    }
+  };
+
   const handleOpenPRModal = async (exerciseIdOrName) => {
     let displayName = exerciseIdOrName;
     if (typeof exerciseIdOrName === 'number' || !isNaN(Number(exerciseIdOrName))) {
@@ -607,6 +631,15 @@ export default function Workouts() {
                             >
                               {work.exercise_name}
                             </button>
+                            <button 
+                              className="video-btn" 
+                              onClick={() => handleOpenVideoModal(work.exercise_name)}
+                            >
+                              <svg viewBox="0 0 10 10">
+                                <polygon points="2,1 9,5 2,9"/>
+                              </svg>
+                              Form
+                            </button>
                             {work.is_new_pr && (
                               <span className="text-[8px] font-black text-amber-600 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
                                 🏆 NEW PR
@@ -674,7 +707,7 @@ export default function Workouts() {
                 {previewLogs.map((log, idx) => (
                   <div key={idx} className="bg-slate-50/50 border border-slate-200/70 p-4 rounded-2xl space-y-3 relative">
                     <div className="flex items-center justify-between">
-                      <div className="relative w-2/3">
+                      <div className="relative w-2/3 flex items-center">
                         <input
                           type="text"
                           value={log.exercise_name}
@@ -687,9 +720,21 @@ export default function Workouts() {
                           onBlur={() => {
                             setTimeout(() => setFocusedExerciseIdx(null), 200);
                           }}
-                          className="font-bold text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-brand-red focus:outline-none w-full py-0.5 text-slate-950 uppercase"
+                          className="font-bold text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-brand-red focus:outline-none flex-1 py-0.5 text-slate-950 uppercase"
                           placeholder="Exercise Name"
                         />
+                        {log.exercise_name && (
+                          <button 
+                            type="button"
+                            className="video-btn shrink-0" 
+                            onClick={() => handleOpenVideoModal(log.exercise_name)}
+                          >
+                            <svg viewBox="0 0 10 10">
+                              <polygon points="2,1 9,5 2,9"/>
+                            </svg>
+                            Form
+                          </button>
+                        )}
                         
                         {focusedExerciseIdx === idx && (
                           <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100">
@@ -1126,6 +1171,52 @@ export default function Workouts() {
                   </span>
                 )}
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Modal */}
+      <AnimatePresence>
+        {videoModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setVideoModalOpen(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-slate-950 border border-purple-500/25 rounded-3xl p-5 w-full max-w-lg shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setVideoModalOpen(false)}
+                className="absolute top-3.5 right-4 text-slate-500 hover:text-slate-200 text-xl font-bold bg-transparent border-none cursor-pointer p-1"
+              >
+                ✕
+              </button>
+              
+              <div className="mb-4 pr-8">
+                <h3 className="text-sm font-semibold text-slate-200 capitalize">
+                  Form Guide: <span className="text-purple-400 font-bold">{videoModalExercise}</span>
+                </h3>
+              </div>
+
+              {!videoNoResult && videoModalUrl ? (
+                <iframe 
+                  className="w-full aspect-video border-none rounded-xl bg-black"
+                  src={videoModalUrl}
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                ></iframe>
+              ) : videoNoResult ? (
+                <div className="text-center py-10 text-slate-500 text-sm font-semibold">
+                  No form video found for this exercise yet.
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 space-y-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-450" />
+                  <p className="text-xs text-slate-500 font-semibold">Retrieving guide video...</p>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

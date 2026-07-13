@@ -65,6 +65,78 @@
   </main>
   {% endblock %}
 
+  <!-- ADDED: Exercise Video Modal -->
+  <div id="videoModalOverlay">
+    <div id="videoModalCard">
+      <button id="videoModalClose" onclick="closeVideoModal()">✕</button>
+      <div id="videoModalTitle">
+        Form Guide: <span id="videoExerciseName"></span>
+      </div>
+      <iframe 
+        id="videoIframe"
+        src=""
+        allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; 
+               gyroscope; picture-in-picture">
+      </iframe>
+      <div id="videoNoResult">
+        No form video found for this exercise yet.
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* --- ADDED: Exercise Video Modal --- */
+  async function openVideoModal(exerciseName) {
+    const overlay = document.getElementById('videoModalOverlay');
+    const iframe  = document.getElementById('videoIframe');
+    const nameEl  = document.getElementById('videoExerciseName');
+    const noRes   = document.getElementById('videoNoResult');
+
+    // Reset state
+    iframe.src = '';
+    iframe.style.display = 'block';
+    noRes.style.display  = 'none';
+    nameEl.textContent   = exerciseName;
+    overlay.classList.add('active');
+
+    try {
+      const encoded = encodeURIComponent(exerciseName);
+      const res  = await fetch(`/api/exercise-video/${encoded}/`);
+      const data = await res.json();
+
+      if (data.found) {
+        // autoplay=1 starts the video immediately when modal opens
+        iframe.src = data.video_url + '?autoplay=1&rel=0';
+      } else {
+        iframe.style.display = 'none';
+        noRes.style.display  = 'block';
+      }
+    } catch (e) {
+      iframe.style.display = 'none';
+      noRes.style.display  = 'block';
+    }
+  }
+
+  function closeVideoModal() {
+    const overlay = document.getElementById('videoModalOverlay');
+    const iframe  = document.getElementById('videoIframe');
+    overlay.classList.remove('active');
+    iframe.src = ''; // stops video playback when modal closes
+  }
+
+  // Close on backdrop click
+  document.getElementById('videoModalOverlay')
+    .addEventListener('click', function(e) {
+      if (e.target === this) closeVideoModal();
+    });
+
+  // Close on ESC key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeVideoModal();
+  });
+  </script>
+
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

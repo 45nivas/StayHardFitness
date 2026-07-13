@@ -401,3 +401,99 @@ select option {
   color: #ffffff !important;
 }
 
+
+/* --- ADDED: Exercise Video Modal --- */
+.video-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.video-btn:hover {
+  background: rgba(167, 139, 250, 0.22);
+  border-color: #a78bfa;
+  color: #fff;
+}
+.video-btn svg {
+  width: 10px;
+  height: 10px;
+  fill: currentColor;
+}
+
+/* Video overlay backdrop */
+#videoModalOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+#videoModalOverlay.active {
+  display: flex;
+}
+
+/* Video modal card */
+#videoModalCard {
+  background: rgba(15, 12, 41, 0.92);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 16px;
+  padding: 20px;
+  width: min(560px, 92vw);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+  position: relative;
+}
+#videoModalTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 14px;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+#videoModalTitle span {
+  color: #a78bfa;
+}
+#videoIframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: none;
+  border-radius: 10px;
+  background: #000;
+}
+#videoNoResult {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+  color: #64748b;
+  font-size: 14px;
+}
+#videoModalClose {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.2s;
+}
+#videoModalClose:hover { color: #e2e8f0; }
+
+

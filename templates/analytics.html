@@ -247,7 +247,18 @@
           <tbody>
             {% for log in recent_logs %}
               <tr>
-                <td style="font-weight: 700;">{{ log.exercise_name }}</td>
+                <td style="font-weight: 700;">
+                  <span class="exercise-name">{{ log.exercise_name }}</span>
+                  <button 
+                    class="video-btn" 
+                    onclick="openVideoModal('{{ log.exercise_name|lower }}')"
+                  >
+                    <svg viewBox="0 0 10 10">
+                      <polygon points="2,1 9,5 2,9"/>
+                    </svg>
+                    Form
+                  </button>
+                </td>
                 <td>
                   <span class="tag-pill tag-{{ log.muscle_group|lower }}">{{ log.muscle_group }}</span>
                 </td>
