@@ -706,11 +706,11 @@ def parse_workout_transcript_fallback_regex(text):
         re.IGNORECASE
     )
     p6 = re.compile(
-        r'(\d+)\s*(?:sets?)\s*(?:of\s*)?([a-zA-Z\s\-]+?)\s*(?:with|at|@|of)\s*(\d+(?:\.\d+)?)\s*(lbs|kg|pounds|lb)?\s*(?:for)?\s*(\d+)\s*(?:reps?|rep)?\b',
+        r'(\d+)\s*(?:sets?)\b\s*(?:of\s*)?([a-zA-Z][a-zA-Z\s\-]*?)\s*(?:with|at|@|of)\b\s*(\d+(?:\.\d+)?)\s*(lbs|kg|pounds|lb)?\s*(?:for)?\s*(\d+)\s*(?:reps?|rep)?\b',
         re.IGNORECASE
     )
     p7 = re.compile(
-        r'(\d+)\s*(?:sets?)\s*(?:of\s*)?([a-zA-Z\s\-]+?)\s*(?:for)?\s*(\d+)\s*(?:reps?|rep)?\s*(?:at|with|@|of)\s*(\d+(?:\.\d+)?)\s*(lbs|kg|pounds|lb)?\b',
+        r'(\d+)\s*(?:sets?)\b\s*(?:of\s*)?([a-zA-Z][a-zA-Z\s\-]*?)\s*(?:for)?\s*(\d+)\s*(?:reps?|rep)?\b\s*(?:at|with|@|of)\b\s*(\d+(?:\.\d+)?)\s*(lbs|kg|pounds|lb)?\b',
         re.IGNORECASE
     )
 
@@ -892,7 +892,7 @@ def parse_workout_transcript_fallback_regex(text):
         if not match:
             mbw5 = pbw5.search(seg)
             if mbw5:
-                sets = 1
+                sets = 3
                 reps = int(mbw5.group(1))
                 weight_value = 0.0
                 exercise_name = mbw5.group(2)
@@ -1632,6 +1632,61 @@ def exercise_video_api(request, exercise_name):
         "video_url": video_url,
         "found": video_url is not None
     })
+
+
+# --- ADDED: PR Tracking ---
+from .shared import get_exercise_pr_history
+
+@login_required
+def exercise_pr_api(request, exercise_name):
+    """
+    GET /api/exercise-pr/<exercise_name>/
+    Returns PR history + current all-time PR e1RM for a given exercise.
+    Used by frontend Chart.js PR graph modal.
+    """
+    history, current_pr = get_exercise_pr_history(
+        request.user,
+        exercise_name,
+        limit=16
+    )
+
+    # Also get list of unique exercises this user has logged
+    # (used to populate exercise picker in the PR modal)
+    from workouts.models import WorkoutLog
+    user_exercises = list(
+        WorkoutLog.objects
+        .filter(user=request.user)
+        .values_list('exercise_name', flat=True)
+        .distinct()
+        .order_by('exercise_name')
+    )
+
+    return JsonResponse({
+        "exercise": exercise_name,
+        "current_pr_e1rm": current_pr,
+        "session_count": len(history),
+        "history": history,
+        "user_exercises": user_exercises,
+    })
+
+
+@login_required
+def user_exercises_api(request):
+    """
+    GET /api/user-exercises/
+    Returns list of all unique exercise names the user has ever logged.
+    Used to populate the exercise picker dropdown in the PR modal.
+    """
+    from workouts.models import WorkoutLog
+    exercises = list(
+        WorkoutLog.objects
+        .filter(user=request.user)
+        .values_list('exercise_name', flat=True)
+        .distinct()
+        .order_by('exercise_name')
+    )
+    return JsonResponse({"exercises": exercises})
+
 
 
 

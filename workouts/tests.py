@@ -855,6 +855,65 @@ class VoiceWorkoutLoggerTestCase(TestCase):
         self.assertFalse(res_data['found'])
         self.assertIsNone(res_data['video_url'])
 
+    def test_exercise_pr_and_user_exercises_apis(self):
+        # 1. Login user
+        self.client.login(username=self.username, password=self.password)
+
+        # 2. Log some workouts
+        log1 = WorkoutLog.objects.create(
+            user=self.user,
+            exercise_name="bench press",
+            muscle_group="Chest",
+            weight=60.0,
+            reps=10
+        )
+        # Add SetLogs
+        from workouts.models import SetLog
+        SetLog.objects.create(
+            workout_log=log1,
+            set_number=1,
+            weight=60.0,
+            reps=10
+        )
+        SetLog.objects.create(
+            workout_log=log1,
+            set_number=2,
+            weight=65.0,
+            reps=8
+        )
+
+        log2 = WorkoutLog.objects.create(
+            user=self.user,
+            exercise_name="bench press",
+            muscle_group="Chest",
+            weight=70.0,
+            reps=8
+        )
+        SetLog.objects.create(
+            workout_log=log2,
+            set_number=1,
+            weight=70.0,
+            reps=8
+        )
+
+        # 3. Test exercise PR API
+        url = reverse('exercise_pr_api', kwargs={'exercise_name': 'bench press'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        res_data = response.json()
+        self.assertEqual(res_data['exercise'], 'bench press')
+        self.assertGreater(res_data['current_pr_e1rm'], 0.0)
+        self.assertEqual(res_data['session_count'], 2)
+        self.assertIn('bench press', res_data['user_exercises'])
+
+        # 4. Test user exercises API
+        url = reverse('user_exercises_api')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        res_data = response.json()
+        self.assertIn('bench press', res_data['exercises'])
+
+
 
 
 

@@ -551,3 +551,80 @@ def get_exercise_video_url(exercise_name: str) -> str | None:
     return None
 
 
+# --- ADDED: PR Tracking ---
+def calculate_e1rm(weight: float, reps: int) -> float:
+    """
+    Epley formula — industry standard, accurate for 2-10 rep range.
+    1RM = weight * (1 + reps/30)
+    For 1 rep, return weight directly (no calculation needed).
+    Always round to 1 decimal place.
+    """
+    if reps <= 0:
+        return 0.0
+    if reps == 1:
+        return round(float(weight), 1)
+    return round(float(weight) * (1 + reps / 30), 1)
+
+
+def get_exercise_pr_history(user, exercise_name: str, limit: int = 16):
+    """
+    Returns (history_list, all_time_best_e1rm) for a given exercise and user.
+    """
+    from workouts.models import WorkoutLog, SetLog
+
+    logs = WorkoutLog.objects.filter(
+        user=user,
+        exercise_name__iexact=exercise_name
+    ).order_by('date')
+
+    # limit to most recent N sessions
+    log_list = list(logs)
+    if len(log_list) > limit:
+        log_list = log_list[-limit:]
+
+    history = []
+    all_time_best_e1rm = 0.0
+
+    for log in log_list:
+        sets = list(SetLog.objects.filter(workout_log=log))
+
+        if sets:
+            # Find best e1RM across all sets this session
+            best_e1rm = 0.0
+            best_weight = 0.0
+            best_reps = 0
+            total_volume = 0.0
+
+            for s in sets:
+                if s.weight and s.reps:
+                    e = calculate_e1rm(s.weight, s.reps)
+                    total_volume += s.weight * s.reps
+                    if e > best_e1rm:
+                        best_e1rm = e
+                        best_weight = s.weight
+                        best_reps = s.reps
+        else:
+            # Fallback to WorkoutLog averages
+            best_e1rm = calculate_e1rm(log.weight or 0, log.reps or 0)
+            best_weight = log.weight or 0.0
+            best_reps = log.reps or 0
+            total_volume = (log.weight or 0) * (log.reps or 0)
+
+        is_pr = best_e1rm > all_time_best_e1rm and best_e1rm > 0
+        if is_pr:
+            all_time_best_e1rm = best_e1rm
+
+        history.append({
+            "date": log.date.strftime("%d %b") if log.date else "",
+            "date_full": log.date.strftime("%Y-%m-%d") if log.date else "",
+            "e1rm": best_e1rm,
+            "best_weight": best_weight,
+            "best_reps": int(best_reps),
+            "volume": round(total_volume, 1),
+            "is_pr": is_pr,
+        })
+
+    return history, round(all_time_best_e1rm, 1)
+
+
+

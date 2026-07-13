@@ -54,5 +54,12 @@ urlpatterns = [
     path('api/exercise-progress/<str:exercise_name>/', views.exercise_progress_api, name='exercise_progress_api'),
     # --- ADDED: Exercise Video Feature ---
     path('api/exercise-video/<str:exercise_name>/', views.exercise_video_api, name='exercise_video_api'),
+    # --- ADDED: PR Tracking ---
+    path('api/exercise-pr/<str:exercise_name>/',
+         views.exercise_pr_api,
+         name='exercise_pr_api'),
+    path('api/user-exercises/',
+         views.user_exercises_api,
+         name='user_exercises_api'),
 ]
 
