@@ -75,6 +75,11 @@ export default function Workouts() {
   const prChartRef = useRef(null);
   const prChartInstance = useRef(null);
 
+  // PR Toast / Badge detection states
+  const [prAchievedExercise, setPrAchievedExercise] = useState('');
+  const [showReactPRToast, setShowReactPRToast] = useState(false);
+  const [prToastMsg, setPrToastMsg] = useState('');
+
   // Exercise picker state
   const [focusedExerciseIdx, setFocusedExerciseIdx] = useState(null);
 
@@ -83,6 +88,71 @@ export default function Workouts() {
   const [videoModalExercise, setVideoModalExercise] = useState('');
   const [videoModalUrl, setVideoModalUrl] = useState('');
   const [videoNoResult, setVideoNoResult] = useState(false);
+
+  // --- ADDED: Weekly Check-in ---
+  const [checkinModalOpen, setCheckinModalOpen] = useState(false);
+  const [checkinDue, setCheckinDue] = useState(false);
+  const [checkinWeekStart, setCheckinWeekStart] = useState('');
+  const [checkinEnergy, setCheckinEnergy] = useState(null);
+  const [checkinSleep, setCheckinSleep] = useState(null);
+  const [checkinSoreness, setCheckinSoreness] = useState(null);
+  const [checkinWeight, setCheckinWeight] = useState('');
+  const [checkinNotes, setCheckinNotes] = useState('');
+  const [checkinSubmitting, setCheckinSubmitting] = useState(false);
+
+  // --- Check-in status on mount ---
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/weekly-checkin/status/`);
+        if (res.data.checkin_due) {
+          setCheckinDue(true);
+          setCheckinWeekStart(res.data.week_start);
+        }
+      } catch (e) {
+        console.warn('Check-in status fetch failed:', e);
+      }
+    };
+    checkStatus();
+  }, []);
+
+  const handleSubmitCheckin = async () => {
+    if (!checkinEnergy || !checkinSleep || !checkinSoreness) {
+      alert('Please select a value for Energy, Sleep, and Soreness.');
+      return;
+    }
+    setCheckinSubmitting(true);
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/weekly-checkin/`, {
+        bodyweight_kg: checkinWeight ? parseFloat(checkinWeight) : null,
+        energy_level: checkinEnergy,
+        sleep_quality: checkinSleep,
+        soreness_level: checkinSoreness,
+        notes: checkinNotes,
+      });
+      if (res.data.status === 'ok') {
+        setCheckinModalOpen(false);
+        setCheckinDue(false);
+        setPrToastMsg('Check-in saved ✓');
+        setShowReactPRToast(true);
+        setTimeout(() => setShowReactPRToast(false), 3000);
+      }
+    } catch (e) {
+      console.error('Checkin submit error:', e);
+      alert('Failed to save check-in.');
+    } finally {
+      setCheckinSubmitting(false);
+    }
+  };
+
+  const openCheckinModal = () => {
+    setCheckinEnergy(null);
+    setCheckinSleep(null);
+    setCheckinSoreness(null);
+    setCheckinWeight('');
+    setCheckinNotes('');
+    setCheckinModalOpen(true);
+  };
 
   const handleOpenVideoModal = async (exerciseName) => {
     setVideoModalExercise(exerciseName);
@@ -529,6 +599,14 @@ export default function Workouts() {
           logs: res.data.logged
         });
         setInputText('');
+        if (res.data.pr_achieved) {
+          setPrAchievedExercise(res.data.exercise_name);
+          setPrToastMsg(`🏆 NEW PR! ${res.data.exercise_name} — ${res.data.pr_e1rm} kg e1RM`);
+          setShowReactPRToast(true);
+          setTimeout(() => {
+            setShowReactPRToast(false);
+          }, 3000);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -772,7 +850,7 @@ export default function Workouts() {
                               </svg>
                               Form
                             </button>
-                            {work.is_new_pr && (
+                            {(work.is_new_pr || (prAchievedExercise && prAchievedExercise.toLowerCase() === work.exercise_name.toLowerCase())) && (
                               <span className="text-[8px] font-black text-amber-600 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
                                 🏆 NEW PR
                               </span>
@@ -1132,6 +1210,81 @@ export default function Workouts() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Weekly Check-in Banner */}
+      {checkinDue && (
+        <div className="checkin-banner">
+          <p>📊 <strong>Weekly check-in ready</strong> — 30 seconds to log your weight, energy, and recovery.</p>
+          <button className="checkin-banner-btn" onClick={openCheckinModal}>Check In</button>
+        </div>
+      )}
+
+      {/* Weekly Check-in Modal */}
+      <AnimatePresence>
+        {checkinModalOpen && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setCheckinModalOpen(false); }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="checkin-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setCheckinModalOpen(false)} style={{position:'absolute',top:16,right:18,background:'none',border:'none',color:'#475569',fontSize:20,cursor:'pointer'}}>✕</button>
+              <h3>📊 Weekly Check-in</h3>
+              <div className="checkin-week-label">Week of {checkinWeekStart}</div>
+
+              <div className="checkin-field">
+                <label>Bodyweight (kg) — optional</label>
+                <input type="number" step="0.1" min="30" max="300" placeholder="e.g. 75.5" className="checkin-weight-input" value={checkinWeight} onChange={(e) => setCheckinWeight(e.target.value)} />
+              </div>
+
+              <div className="checkin-slider-row">
+                <div className="checkin-slider-label">⚡ Energy this week</div>
+                <div className="checkin-pills">
+                  {[{v:1,e:'😴'},{v:2,e:'😑'},{v:3,e:'🙂'},{v:4,e:'💪'},{v:5,e:'🔥'}].map(({v,e}) => (
+                    <div key={v} className={`checkin-pill ${checkinEnergy===v?'selected':''}`} onClick={() => setCheckinEnergy(v)}>{v}<br/><span style={{fontSize:16}}>{e}</span></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="checkin-slider-row">
+                <div className="checkin-slider-label">😴 Sleep quality</div>
+                <div className="checkin-pills">
+                  {[{v:1,e:'😵'},{v:2,e:'😔'},{v:3,e:'😐'},{v:4,e:'😊'},{v:5,e:'🌙'}].map(({v,e}) => (
+                    <div key={v} className={`checkin-pill ${checkinSleep===v?'selected':''}`} onClick={() => setCheckinSleep(v)}>{v}<br/><span style={{fontSize:16}}>{e}</span></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="checkin-slider-row">
+                <div className="checkin-slider-label">💪 Muscle soreness</div>
+                <div className="checkin-pills">
+                  {[{v:1,e:'💚'},{v:2,e:'🟡'},{v:3,e:'🟠'},{v:4,e:'🔴'},{v:5,e:'🆘'}].map(({v,e}) => (
+                    <div key={v} className={`checkin-pill ${checkinSoreness===v?'selected':''}`} onClick={() => setCheckinSoreness(v)}>{v}<br/><span style={{fontSize:16}}>{e}</span></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="checkin-field" style={{marginBottom:0}}>
+                <label>Notes (optional)</label>
+                <textarea className="checkin-notes" placeholder="Any injuries, PRs, or things to remember this week..." value={checkinNotes} onChange={(e) => setCheckinNotes(e.target.value)} />
+              </div>
+
+              <button className="checkin-submit-btn" disabled={checkinSubmitting} onClick={handleSubmitCheckin}>
+                {checkinSubmitting ? 'Saving...' : 'Save Check-in'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* PR Toast Notification */}
+      {showReactPRToast && (
+        <div id="prToast" className="visible">
+          {prToastMsg}
+        </div>
+      )}
 
       {/* PR Progress Modal */}
       <AnimatePresence>

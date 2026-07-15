@@ -61,5 +61,22 @@ urlpatterns = [
     path('api/user-exercises/',
          views.user_exercises_api,
          name='user_exercises_api'),
+    # --- ADDED: Weekly Check-in ---
+    path('api/weekly-checkin/',
+         views.submit_weekly_checkin,
+         name='submit_weekly_checkin'),
+    path('api/weekly-checkin/history/',
+         views.get_checkin_history,
+         name='checkin_history'),
+    path('api/weekly-checkin/status/',
+         views.checkin_status,
+         name='checkin_status'),
+    # --- ADDED: Body Scan History & Comparison ---
+    path('api/body-scan/history/',
+         views.body_scan_history,
+         name='body_scan_history'),
+    path('api/body-scan/compare/',
+         views.compare_body_scans,
+         name='compare_body_scans'),
 ]
 

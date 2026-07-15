@@ -224,6 +224,7 @@ NUTRITION_DATABASE = {
 @login_required
 def analytics_dashboard(request):
     """Fitness Analytics Dashboard displaying logs, streaks, and muscle volume."""
+    from workouts.models import WorkoutLog, SetLog
     user = request.user
     
     if request.method == 'POST':
@@ -319,6 +320,29 @@ def analytics_dashboard(request):
     from workouts.models import WorkoutRecommendation
     recommendation = WorkoutRecommendation.objects.filter(user_profile__user=user).order_by('-created_at').first()
 
+    # --- ADDED: PR badge context ---
+    from .shared import get_current_pr_e1rm, calculate_e1rm
+    from django.utils import timezone
+
+    today_date = timezone.now().date()
+    today_logs = WorkoutLog.objects.filter(user=request.user, date=today_date)
+    
+    pr_today_exercises = set()
+    for log in today_logs:
+        prev_pr = get_current_pr_e1rm(request.user, log.exercise_name)
+        sets_list = list(SetLog.objects.filter(workout_log=log))
+        if sets_list:
+            for s in sets_list:
+                if s.weight and s.reps:
+                    e1rm = calculate_e1rm(s.weight, s.reps)
+                    if e1rm > prev_pr:
+                        pr_today_exercises.add(log.exercise_name.lower())
+                        break
+        else:
+            e1rm = calculate_e1rm(log.weight or 0, log.reps or 0)
+            if e1rm > prev_pr:
+                pr_today_exercises.add(log.exercise_name.lower())
+
     context = {
         'streak': streak,
         'total_workouts': total_workouts,
@@ -327,6 +351,7 @@ def analytics_dashboard(request):
         'avg_posture': avg_posture,
         'recent_logs': recent_logs_list,
         'recommendation': recommendation,
+        'pr_today_exercises': pr_today_exercises,
         # JSON data for charts
         'muscle_labels': json.dumps(list(muscle_volume_data.keys())),
         'muscle_values': json.dumps(list(muscle_volume_data.values())),
@@ -459,3 +484,131 @@ def api_carb_cycling_calculator(request):
     })
 
 
+# --- ADDED: Weekly Check-in API ---
+from django.views.decorators.http import require_http_methods
+
+@login_required
+@require_http_methods(["POST"])
+def submit_weekly_checkin(request):
+    """
+    POST /api/weekly-checkin/
+    Body (JSON):
+    {
+      "bodyweight_kg": 75.5,   (optional, can be null)
+      "energy_level": 4,       (1-5, required)
+      "sleep_quality": 3,      (1-5, required)
+      "soreness_level": 2,     (1-5, required)
+      "notes": "..."           (optional)
+    }
+    Creates or updates the check-in for the current week.
+    Returns the saved record.
+    """
+    from .shared import get_week_start
+    from workouts.models import WeeklyCheckin
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Validate required fields
+    for field in ["energy_level", "sleep_quality", "soreness_level"]:
+        val = data.get(field)
+        if val is None or not isinstance(val, int) or not (1 <= val <= 5):
+            return JsonResponse(
+                {"error": f"{field} must be an integer between 1 and 5"},
+                status=400
+            )
+
+    week_start = get_week_start()
+
+    checkin, created = WeeklyCheckin.objects.update_or_create(
+        user=request.user,
+        week_start=week_start,
+        defaults={
+            "bodyweight_kg": data.get("bodyweight_kg"),
+            "energy_level": data["energy_level"],
+            "sleep_quality": data["sleep_quality"],
+            "soreness_level": data["soreness_level"],
+            "notes": data.get("notes", ""),
+        }
+    )
+
+    return JsonResponse({
+        "status": "ok",
+        "created": created,
+        "week_start": str(checkin.week_start),
+        "bodyweight_kg": checkin.bodyweight_kg,
+        "energy_level": checkin.energy_level,
+        "sleep_quality": checkin.sleep_quality,
+        "soreness_level": checkin.soreness_level,
+        "notes": checkin.notes,
+    })
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_checkin_history(request):
+    """
+    GET /api/weekly-checkin/history/
+    Returns last 12 weeks of check-ins for the current user.
+    Used to plot bodyweight trend + energy/sleep/soreness bars
+    in the analytics dashboard.
+    """
+    from workouts.models import WeeklyCheckin
+
+    checkins = WeeklyCheckin.objects.filter(
+        user=request.user
+    ).order_by('week_start')[:12]
+
+    return JsonResponse({
+        "checkins": [
+            {
+                "week_start": str(c.week_start),
+                "week_label": c.week_start.strftime("%d %b"),
+                "bodyweight_kg": c.bodyweight_kg,
+                "energy_level": c.energy_level,
+                "sleep_quality": c.sleep_quality,
+                "soreness_level": c.soreness_level,
+                "notes": c.notes,
+            }
+            for c in checkins
+        ]
+    })
+
+
+@login_required
+@require_http_methods(["GET"])
+def checkin_status(request):
+    """
+    GET /api/weekly-checkin/status/
+    Returns whether current user has checked in this week.
+    Used by dashboard to decide whether to show the prompt banner.
+    """
+    from .shared import checkin_due, get_week_start
+    from workouts.models import WeeklyCheckin
+
+    due = checkin_due(request.user)
+    week_start = get_week_start()
+
+    current = None
+    if not due:
+        try:
+            c = WeeklyCheckin.objects.get(
+                user=request.user,
+                week_start=week_start
+            )
+            current = {
+                "bodyweight_kg": c.bodyweight_kg,
+                "energy_level": c.energy_level,
+                "sleep_quality": c.sleep_quality,
+                "soreness_level": c.soreness_level,
+            }
+        except WeeklyCheckin.DoesNotExist:
+            pass
+
+    return JsonResponse({
+        "checkin_due": due,
+        "week_start": str(week_start),
+        "current_checkin": current,
+    })

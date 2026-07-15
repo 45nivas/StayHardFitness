@@ -627,4 +627,62 @@ def get_exercise_pr_history(user, exercise_name: str, limit: int = 16):
     return history, round(all_time_best_e1rm, 1)
 
 
+# --- ADDED: PR Badge Detection ---
+def get_current_pr_e1rm(user, exercise_name: str) -> float:
+    """
+    Returns the all-time best e1RM for this user + exercise
+    BEFORE today's session. Used to detect new PRs at log time.
+    Returns 0.0 if no history exists (first time logging = always PR).
+    """
+    from workouts.models import WorkoutLog, SetLog
+    from django.utils import timezone
+
+    today = timezone.now().date()
+
+    # Get all previous sessions (exclude today)
+    past_logs = WorkoutLog.objects.filter(
+        user=user,
+        exercise_name__iexact=exercise_name,
+        date__lt=today
+    ).order_by('date')
+
+    best = 0.0
+    for log in past_logs:
+        sets = list(SetLog.objects.filter(workout_log=log))
+        if sets:
+            for s in sets:
+                if s.weight and s.reps:
+                    e = calculate_e1rm(s.weight, s.reps)
+                    if e > best:
+                        best = e
+        else:
+            e = calculate_e1rm(log.weight or 0, log.reps or 0)
+            if e > best:
+                best = e
+
+    return round(best, 1)
+
+
+# --- ADDED: Weekly Check-in helpers ---
+from datetime import date, timedelta
+
+def get_week_start(for_date=None) -> date:
+    """
+    Returns the Monday of the ISO week for the given date.
+    Defaults to today if no date provided.
+    """
+    d = for_date or date.today()
+    return d - timedelta(days=d.weekday())  # weekday(): Mon=0, Sun=6
+
+def checkin_due(user) -> bool:
+    """
+    Returns True if user has NOT submitted a check-in for the
+    current ISO week yet. Used to show the prompt banner on dashboard.
+    """
+    from workouts.models import WeeklyCheckin
+    week_start = get_week_start()
+    return not WeeklyCheckin.objects.filter(
+        user=user,
+        week_start=week_start
+    ).exists()
 

@@ -272,7 +272,62 @@
 
     </div>
 </div>
+
+<!-- ADDED: Body Progress Gallery -->
+<div id="progressGallery" class="glass-panel" style="padding: 20px; margin-top: 24px;">
+  <h3>📸 Progress Gallery</h3>
+
+  <div id="galleryEmpty" style="display:none;">
+    No scans yet. Upload your first photo above to start tracking.
+  </div>
+
+  <div id="galleryContent" style="display:none;">
+    <p id="scanSelectHint">
+      🔵 Click one scan to select as <strong>Before</strong>,
+      then 🟡 click another as <strong>After</strong>
+    </p>
+
+    <div id="scanThumbnailStrip"></div>
+
+    <button id="compareBtn" onclick="runComparison()">
+      Compare Selected Scans
+    </button>
+
+    <div id="comparisonPanel">
+      <div class="comparison-grid">
+        <div class="comparison-col col-a" id="colA">
+          <div class="comparison-col-header">🔵 BEFORE</div>
+          <img id="imgA" src="" alt="Before scan"/>
+          <div id="scoresA"></div>
+        </div>
+        <div class="comparison-col col-b" id="colB">
+          <div class="comparison-col-header">🟡 AFTER</div>
+          <img id="imgB" src="" alt="After scan"/>
+          <div id="scoresB"></div>
+        </div>
+      </div>
+
+      <div id="deltaRows" style="
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 14px;
+        margin-bottom: 16px;
+        overflow: hidden;
+      "></div>
+
+      <div id="aiAnalysisCard">
+        <h4>🤖 AI Coach Analysis</h4>
+        <p class="ai-summary-text" id="aiSummary"></p>
+        <div class="ai-improvements" id="aiImprovements"></div>
+        <div class="ai-focus-item" id="aiFocus"></div>
+        <span class="composition-pill" id="compositionPill"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
 
 {% block extra_scripts %}
 <script>
@@ -637,5 +692,183 @@
                 btn.textContent = 'Generate Workout Plan';
             });
     });
+
+    /* --- ADDED: Body Progress Gallery --- */
+    let selectedScanA = null;
+    let selectedScanB = null;
+    let allScans = [];
+
+    async function initProgressGallery() {
+      const galleryEl = document.getElementById('progressGallery');
+      if (!galleryEl) return;
+
+      try {
+        const res  = await fetch('/api/body-scan/history/');
+        const data = await res.json();
+        allScans   = data.scans;
+
+        if (allScans.length === 0) {
+          document.getElementById('galleryEmpty').style.display  = 'block';
+          document.getElementById('galleryContent').style.display = 'none';
+          return;
+        }
+
+        document.getElementById('galleryEmpty').style.display  = 'none';
+        document.getElementById('galleryContent').style.display = 'block';
+        renderThumbnails(allScans);
+
+        if (allScans.length >= 2) {
+          const thumbs = document.querySelectorAll('.scan-thumb');
+          selectThumb(allScans[allScans.length - 1], thumbs[thumbs.length - 1], 'a');
+          selectThumb(allScans[0], thumbs[0], 'b');
+        }
+      } catch (e) {
+        console.warn('Progress gallery error:', e);
+      }
+    }
+
+    function renderThumbnails(scans) {
+      const strip = document.getElementById('scanThumbnailStrip');
+      strip.innerHTML = '';
+      [...scans].reverse().forEach((scan) => {
+        const thumb = document.createElement('div');
+        thumb.className = 'scan-thumb';
+        thumb.dataset.id = scan.id;
+        thumb.innerHTML = `
+          <img src="${scan.image_url}"
+               alt="${scan.week_label}"
+               onerror="this.src='/static/img/placeholder_body.png'"/>
+          <div class="scan-thumb-label">${scan.week_label}<br>${scan.date}</div>
+        `;
+        thumb.addEventListener('click', () => handleThumbClick(scan, thumb));
+        strip.appendChild(thumb);
+      });
+    }
+
+    function handleThumbClick(scan, thumbEl) {
+      if (!selectedScanA || (selectedScanA && selectedScanB)) {
+        selectedScanA = null;
+        selectedScanB = null;
+        document.querySelectorAll('.scan-thumb')
+          .forEach(t => t.classList.remove('selected-a','selected-b'));
+        document.getElementById('compareBtn').style.display = 'none';
+        document.getElementById('comparisonPanel').classList.remove('visible');
+      }
+
+      if (!selectedScanA) {
+        selectedScanA = scan;
+        thumbEl.classList.add('selected-a');
+        document.getElementById('scanSelectHint').textContent =
+          '🟡 Now click a second scan to select as After';
+      } else if (!selectedScanB && scan.id !== selectedScanA.id) {
+        selectedScanB = scan;
+        thumbEl.classList.add('selected-b');
+        document.getElementById('compareBtn').style.display = 'inline-block';
+        document.getElementById('scanSelectHint').textContent =
+          '✓ Ready to compare. Click the button below.';
+      }
+    }
+
+    function selectThumb(scan, thumbEl, slot) {
+      if (slot === 'a') {
+        selectedScanA = scan;
+        thumbEl.classList.add('selected-a');
+      } else {
+        selectedScanB = scan;
+        thumbEl.classList.add('selected-b');
+        document.getElementById('compareBtn').style.display = 'inline-block';
+      }
+    }
+
+    async function runComparison() {
+      if (!selectedScanA || !selectedScanB) return;
+      const btn = document.getElementById('compareBtn');
+      btn.disabled    = true;
+      btn.textContent = 'Analysing...';
+
+      let idA = selectedScanA.id;
+      let idB = selectedScanB.id;
+      // Ensure A is older
+      const dateA = new Date(selectedScanA.date);
+      const dateB = new Date(selectedScanB.date);
+      if (dateA > dateB) { [idA, idB] = [idB, idA]; }
+
+      try {
+        const res  = await fetch(`/api/body-scan/compare/?a=${idA}&b=${idB}`);
+        const data = await res.json();
+        renderComparison(data);
+        document.getElementById('comparisonPanel').classList.add('visible');
+        document.getElementById('comparisonPanel')
+          .scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {
+        console.error('Comparison error:', e);
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Compare Selected Scans';
+      }
+    }
+
+    function renderComparison(data) {
+      const { scan_a, scan_b, deltas, ai_analysis } = data;
+
+      document.getElementById('imgA').src = scan_a.image_url || '';
+      document.getElementById('imgB').src = scan_b.image_url || '';
+
+      const scoresAEl = document.getElementById('scoresA');
+      const scoresBEl = document.getElementById('scoresB');
+      scoresAEl.innerHTML = '';
+      scoresBEl.innerHTML = '';
+
+      Object.keys(scan_a.scores).forEach(muscle => {
+        scoresAEl.innerHTML +=
+          `<div class="delta-row">
+             <span class="delta-muscle">${muscle}</span>
+             <span style="color:#60a5fa;font-weight:700">${scan_a.scores[muscle]}</span>
+           </div>`;
+      });
+      Object.keys(scan_b.scores).forEach(muscle => {
+        scoresBEl.innerHTML +=
+          `<div class="delta-row">
+             <span class="delta-muscle">${muscle}</span>
+             <span style="color:#f59e0b;font-weight:700">${scan_b.scores[muscle]}</span>
+           </div>`;
+      });
+
+      const deltaEl = document.getElementById('deltaRows');
+      deltaEl.innerHTML = '<div style="padding:10px 12px; font-size:11px; font-weight:700; color:#475569; letter-spacing:0.4px;">MUSCLE CHANGES</div>';
+      Object.entries(deltas).forEach(([muscle, d]) => {
+        const sign = d.delta > 0 ? '+' : '';
+        const cls  = d.delta > 0 ? 'positive' : d.delta < 0 ? 'negative' : 'neutral';
+        deltaEl.innerHTML +=
+          `<div class="delta-row">
+             <span class="delta-muscle">${muscle}</span>
+             <span class="delta-scores">${d.score_a} → ${d.score_b}</span>
+             <span class="delta-badge ${cls}">${sign}${d.delta}</span>
+           </div>`;
+      });
+
+      document.getElementById('aiSummary').textContent = ai_analysis.summary || '';
+
+      const impEl = document.getElementById('aiImprovements');
+      impEl.innerHTML = '';
+      (ai_analysis.improvements || []).forEach(item => {
+        impEl.innerHTML += `<div class="ai-improvement-item">${item}</div>`;
+      });
+
+      document.getElementById('aiFocus').textContent = ai_analysis.still_working_on || '';
+
+      const pill = document.getElementById('compositionPill');
+      const trend = ai_analysis.composition_trend || 'maintaining';
+      const trendLabels = {
+        leaner:      '📉 Getting Leaner',
+        more_mass:   '📈 Building Mass',
+        maintaining: '➡️ Maintaining',
+      };
+      pill.textContent = trendLabels[trend] || trend;
+      pill.className   = `composition-pill ${trend}`;
+    }
+
+    initProgressGallery();
 </script>
 {% endblock %}
+

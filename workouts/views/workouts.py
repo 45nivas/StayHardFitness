@@ -1447,7 +1447,7 @@ def confirm_workout_log_api(request):
     if not exercises:
         return JsonResponse({"error": "No exercises to save"}, status=400)
         
-    from workouts.models import SetLog
+    from workouts.models import WorkoutLog, SetLog
     import datetime
     today = datetime.date.today()
     
@@ -1586,9 +1586,39 @@ def confirm_workout_log_api(request):
     if not logged_workouts:
         return JsonResponse({"error": "No valid exercises could be saved"}, status=422)
         
+    # --- ADDED: PR Badge Detection ---
+    from .shared import get_current_pr_e1rm, calculate_e1rm
+
+    pr_achieved = False
+    pr_e1rm = 0.0
+    previous_pr = 0.0
+    pr_exercise_name = ""
+
+    for log in logged_workouts:
+        workout_log = WorkoutLog.objects.get(id=log["id"])
+        exercise_name = workout_log.exercise_name
+        prev_pr = get_current_pr_e1rm(request.user, exercise_name)
+        
+        saved_sets = SetLog.objects.filter(workout_log=workout_log)
+        for s in saved_sets:
+            if s.weight and s.reps:
+                today_e1rm = calculate_e1rm(s.weight, s.reps)
+                if today_e1rm > prev_pr:
+                    pr_achieved = True
+                    pr_e1rm = today_e1rm
+                    previous_pr = prev_pr
+                    pr_exercise_name = exercise_name
+                    break
+        if pr_achieved:
+            break
+            
     return JsonResponse({
         "success": True,
-        "logged": logged_workouts
+        "logged": logged_workouts,
+        "pr_achieved": pr_achieved,
+        "pr_e1rm": round(pr_e1rm, 1),
+        "previous_pr": previous_pr,
+        "exercise_name": pr_exercise_name
     })
 
 

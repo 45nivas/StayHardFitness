@@ -427,6 +427,29 @@ def analyse_body_api(request):
                 weak_muscles=", ".join(weak)
             )
     
+    # --- ADDED: Save BodyScan record ---
+    try:
+        from workouts.models import BodyScan
+        from datetime import date
+        from django.core.files.base import ContentFile
+        import uuid
+
+        scan = BodyScan(
+            user=request.user,
+            muscle_scores=analysis.get("muscle_scores", {}),
+            posture_notes=analysis.get("priority_recommendation", ""),
+            gemini_analysis=json.dumps(analysis),
+            week_number=date.today().isocalendar()[1],
+        )
+        # Save image bytes to ImageField via ContentFile
+        filename = f"scan_{request.user.id}_{uuid.uuid4().hex[:8]}.jpg"
+        scan.image.save(filename, ContentFile(image_bytes), save=False)
+        scan.save()
+    except Exception as e:
+        # Non-fatal — analysis still returns even if scan save fails
+        print("BodyScan save error:", e)
+    # --- END ADDED ---
+    
     return JsonResponse({"success": True, "analysis": analysis})
 
 
@@ -467,4 +490,140 @@ def transcribe_audio(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+# --- ADDED: Body Scan History API ---
+
+@login_required
+def body_scan_history(request):
+    """
+    GET /api/body-scan/history/
+    Returns last 8 body scans for the current user.
+    Used to populate the progress gallery thumbnail strip.
+    """
+    from workouts.models import BodyScan
+    scans = BodyScan.objects.filter(user=request.user)[:8]
+
+    return JsonResponse({
+        "scans": [
+            {
+                "id": s.id,
+                "date": s.scan_date.strftime("%d %b %Y"),
+                "week": s.week_number,
+                "week_label": f"Week {s.week_number}",
+                "scores": s.muscle_scores,
+                "image_url": s.image.url if s.image else None,
+            }
+            for s in scans
+        ]
+    })
+
+
+@login_required
+def compare_body_scans(request):
+    """
+    GET /api/body-scan/compare/?a=<id>&b=<id>
+    Compares two BodyScan records for the current user.
+    Returns delta scores + AI comparison via Gemini Vision.
+    """
+    from workouts.models import BodyScan
+    import google.generativeai as genai
+
+    scan_id_a = request.GET.get('a')
+    scan_id_b = request.GET.get('b')
+
+    if not scan_id_a or not scan_id_b:
+        return JsonResponse({"error": "Both scan IDs required"}, status=400)
+
+    try:
+        scan_a = BodyScan.objects.get(id=scan_id_a, user=request.user)
+        scan_b = BodyScan.objects.get(id=scan_id_b, user=request.user)
+    except BodyScan.DoesNotExist:
+        return JsonResponse({"error": "Scan not found"}, status=404)
+
+    # Compute delta scores
+    scores_a = scan_a.muscle_scores or {}
+    scores_b = scan_b.muscle_scores or {}
+    all_muscles = set(list(scores_a.keys()) + list(scores_b.keys()))
+
+    deltas = {}
+    for muscle in all_muscles:
+        a_val = scores_a.get(muscle, 0)
+        b_val = scores_b.get(muscle, 0)
+        deltas[muscle] = {
+            "score_a": a_val,
+            "score_b": b_val,
+            "delta": round(b_val - a_val, 1),
+        }
+
+    # Gemini Vision comparison (both images)
+    ai_analysis = None
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY not set")
+
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        prompt = f"""You are a physique coach comparing two progress photos.
+Image 1 was taken on {scan_a.scan_date} (earlier).
+Image 2 was taken on {scan_b.scan_date} (more recent).
+
+Analyze visible changes between the two photos:
+1. Which specific muscles show the most development
+2. Body composition shift (leaner / more muscle mass / maintaining)
+3. Any posture improvements
+4. Top 2 improvements
+5. Top 1 area still needing work
+
+Be specific, direct, and motivating. Under 100 words total.
+
+Respond ONLY with valid JSON, no markdown, no backticks:
+{{
+  "improvements": ["...", "..."],
+  "still_working_on": "...",
+  "composition_trend": "leaner" or "more_mass" or "maintaining",
+  "summary": "..."
+}}"""
+
+        import PIL.Image
+        img_a = PIL.Image.open(scan_a.image.path)
+        img_b = PIL.Image.open(scan_b.image.path)
+
+        response = model.generate_content([prompt, img_a, img_b])
+        raw = response.text.strip()
+        # Strip any accidental markdown fences
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        ai_analysis = json.loads(raw.strip())
+
+    except Exception as e:
+        # Graceful fallback — return deltas without AI analysis
+        print("Body scan comparison AI error:", e)
+        ai_analysis = {
+            "improvements": ["Keep training to see AI comparison"],
+            "still_working_on": "Data loading",
+            "composition_trend": "maintaining",
+            "summary": "AI comparison unavailable. Score deltas shown above."
+        }
+
+    return JsonResponse({
+        "scan_a": {
+            "id": scan_a.id,
+            "date": scan_a.scan_date.strftime("%d %b %Y"),
+            "week_label": f"Week {scan_a.week_number}",
+            "image_url": scan_a.image.url if scan_a.image else None,
+            "scores": scores_a,
+        },
+        "scan_b": {
+            "id": scan_b.id,
+            "date": scan_b.scan_date.strftime("%d %b %Y"),
+            "week_label": f"Week {scan_b.week_number}",
+            "image_url": scan_b.image.url if scan_b.image else None,
+            "scores": scores_b,
+        },
+        "deltas": deltas,
+        "ai_analysis": ai_analysis,
+    })
 

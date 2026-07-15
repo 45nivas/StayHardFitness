@@ -227,6 +227,17 @@
   </div>
 </div>
 
+<!-- ADDED: Bodyweight Trend Chart -->
+<div class="chart-card animate-up" style="margin-top: 24px; padding: 20px;">
+  <h3 style="font-size:14px; font-weight:700; color:#e2e8f0; margin:0 0 16px 0;">⚖️ Bodyweight Trend</h3>
+  <div style="position:relative; height:180px;">
+    <canvas id="bodyweightChart"></canvas>
+    <div id="bodyweightEmpty" style="display:none; text-align:center; padding:60px 0; color:#475569; font-size:13px;">
+      No check-in data yet. Complete your first weekly check-in to start tracking.
+    </div>
+  </div>
+</div>
+
 <!-- Logs & Logging Panel -->
 <div class="log-section animate-up">
   <!-- Recent Logs Table -->
@@ -253,6 +264,9 @@
                     onclick="openPRModal('{{ log.exercise_name|lower }}')"
                     title="View progress for {{ log.exercise_name }}"
                   >{{ log.exercise_name }}</span>
+                  {% if log.exercise_name|lower in pr_today_exercises %}
+                    <span class="pr-badge-inline">🏆 PR</span>
+                  {% endif %}
                   <button 
                     class="video-btn" 
                     onclick="openVideoModal('{{ log.exercise_name|lower }}')"
@@ -617,5 +631,73 @@
       alert('Error: ' + err.message);
     });
   });
+
+  // --- ADDED: Bodyweight Trend Chart ---
+  async function initBodyweightChart() {
+    if (!document.getElementById('bodyweightChart')) return;
+    try {
+      const res  = await fetch('/api/weekly-checkin/history/');
+      const data = await res.json();
+      const withWeight = data.checkins.filter(c => c.bodyweight_kg !== null);
+      if (withWeight.length === 0) {
+        document.getElementById('bodyweightChart').style.display = 'none';
+        document.getElementById('bodyweightEmpty').style.display = 'block';
+        return;
+      }
+      const ctx = document.getElementById('bodyweightChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: withWeight.map(c => c.week_label),
+          datasets: [{
+            label: 'Bodyweight (kg)',
+            data: withWeight.map(c => c.bodyweight_kg),
+            borderColor: '#34d399',
+            backgroundColor: 'rgba(52, 211, 153, 0.08)',
+            borderWidth: 2.5,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '#34d399',
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e1b4b',
+              borderColor: '#34d399',
+              borderWidth: 1,
+              padding: 10,
+              callbacks: {
+                label: (item) => `${item.raw} kg`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#475569', font: { size: 11 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#475569', font: { size: 11 } },
+              title: {
+                display: true,
+                text: 'kg',
+                color: '#334155',
+                font: { size: 11 }
+              }
+            }
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Bodyweight chart error:', e);
+    }
+  }
+  initBodyweightChart();
 </script>
 {% endblock %}

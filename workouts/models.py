@@ -259,4 +259,65 @@ class SetLog(models.Model):
         return self.reps * self.weight
 
 
+# --- ADDED: Weekly Check-in ---
+class WeeklyCheckin(models.Model):
+    """
+    One record per user per week (enforced by unique_together).
+    week_start = the Monday of that ISO week (date object).
+    Scores are 1–5 integers. bodyweight_kg is optional.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='weekly_checkins'
+    )
+    week_start = models.DateField()
+    bodyweight_kg = models.FloatField(null=True, blank=True)
+    energy_level = models.IntegerField()    # 1=low, 5=high
+    sleep_quality = models.IntegerField()   # 1=poor, 5=great
+    soreness_level = models.IntegerField()  # 1=fresh, 5=very sore
+    notes = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ['user', 'week_start']
+        ordering = ['-week_start']
+
+    def __str__(self):
+        return f"{self.user.username} — week of {self.week_start}"
+
+
+# --- ADDED: Body Scan History ---
+class BodyScan(models.Model):
+    """
+    Stores each body analysis session.
+    One per user per week ideally, but no unique constraint —
+    user can scan multiple times and compare any two.
+    muscle_scores: JSON dict e.g. {"Chest": 72, "Back": 68, ...}
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='body_scans'
+    )
+    scan_date = models.DateField(auto_now_add=True)
+    image = models.ImageField(upload_to='body_scans/')
+    muscle_scores = models.JSONField(default=dict)
+    posture_notes = models.TextField(blank=True, default='')
+    gemini_analysis = models.TextField(blank=True, default='')
+    week_number = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-scan_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} — scan {self.scan_date} (W{self.week_number})"
+
+    def save(self, *args, **kwargs):
+        if not self.week_number:
+            from datetime import date
+            self.week_number = self.scan_date.isocalendar()[1] \
+                if self.scan_date else date.today().isocalendar()[1]
+        super().save(*args, **kwargs)
