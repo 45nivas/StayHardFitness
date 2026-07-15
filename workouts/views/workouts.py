@@ -408,6 +408,7 @@ Critical rules:
 - If weight not mentioned, default to 0
 - Bodyweight exercises (pull ups, push ups, dips) default 
   weight to 0
+- CRITICAL: weight is always the number paired with kg/lbs/pounds unit. Never use the reps number as weight. If input is '15 reps 50kg', weight=50.
 
 Return this exact JSON:
 {{
@@ -502,143 +503,48 @@ If no exercises are found, return an empty array [].
 def parse_with_qwen(transcript: str) -> dict | None:
     import requests, json
     
-    prompt = """You are a strict gym workout log parser.
-Extract per-set data from speech transcripts.
-Return ONLY valid JSON. No markdown. No explanation.
+    prompt = f"""You are a gym workout parser. Extract exercise data from this text.
 
-CRITICAL RULES:
+INPUT: "{transcript}"
 
-EXERCISE NAME:
-- Extract only the actual exercise name
-- Never use kg, lbs, bodyweight, sets, reps as a name
-- Name always appears BEFORE the numbers
+RULES — follow these exactly:
+1. exercise_name: the name of the exercise (string)
+2. sets: total number of sets performed (integer)
+3. reps: the REPS number — this always comes BEFORE the weight
+4. weight: the WEIGHT number — this ALWAYS comes AFTER reps, 
+   and is ALWAYS paired with a unit like kg or lbs or pounds
+   - If the sentence is "15 reps 50kg", reps=15, weight=50
+   - If the sentence is "3 sets 15 reps 50kg", reps=15, weight=50
+   - The weight is NEVER the same number as reps unless explicitly stated
+   - When in doubt: the number before kg/lbs/pounds = weight
+5. is_failure: true only if words like "failure", "till failure", 
+   "to failure", "failed" appear
+6. is_spotted: true only if "spotter", "spotted", "with spotter" appear
+7. set_type: "drop" if drop set, "pyramid" if pyramid, else "normal"
 
-PER-SET EXTRACTION:
-- Each set can have different weight and reps
-- "3 sets of 30kg, 25kg, 20kg" → 3 separate sets with 
-  different weights
-- "set 1 30kg 8 reps, set 2 25kg 6 reps" → parse each 
-  set individually
-- "first set 30kg, second set 25kg" → set 1 and set 2
-- If all sets same weight → repeat that weight for each set
-- If only total sets mentioned with one weight → 
-  use same weight for all sets
+CRITICAL WEIGHT EXTRACTION RULE:
+- ALWAYS look for the unit (kg/lbs/pounds) first
+- The number immediately before the unit = weight
+- Example: "15 reps 50kg" → weight=50 (NOT 15)
+- Example: "3 sets 12 reps 40 kg" → weight=40 (NOT 12 or 3)
+- Example: "did 8 reps at 100kg" → weight=100
+- Example: "bodyweight" or no unit mentioned → weight=0
 
-SPOTTER DETECTION:
-- "with spot", "with spotter", "spotted", "with help" → 
-  with_spotter=true for that set
-- "without spot", "unassisted" → with_spotter=false
+Return ONLY a JSON array, no explanation, no markdown:
+[
+  {{
+    "exercise_name": "...",
+    "sets": <integer>,
+    "reps": <integer>,
+    "weight": <number>,
+    "is_failure": <bool>,
+    "is_spotted": <bool>,
+    "set_type": "normal"|"drop"|"pyramid"
+  }}
+]
 
-FAILURE DETECTION:
-- "till failure", "to failure", "failed" → 
-  to_failure=true, reps=0 for that set
-- If reps are not mentioned or missing in a set → 
-  to_failure=true, reps=0 for that set
-
-WEIGHT RULES:
-- Last number before kg/lbs is always the weight
-- "each hand/arm/side" → that is the per-hand weight, 
-  use it as weight directly
-- "bodyweight" or "bw" → weight=0
-
-MUSCLE GROUP MAPPING:
-squats, leg press, lunges, Romanian deadlift, 
-calf raises → "Legs"
-bench press, incline, decline, chest fly, 
-push ups, dips → "Chest"
-pull ups, rows, lat pulldown, deadlift → "Back"
-shoulder press, lateral raise, front raise → "Shoulders"
-bicep curl, hammer curl, preacher curl → "Biceps"
-tricep pushdown, skull crusher, 
-tricep extension → "Triceps"
-anything else → "General"
-
-CASUAL SPEECH:
-Ignore all filler: "bro", "man", "yaar", "then", 
-"after that", "finished with", "started with",
-"with spot", emotions, and non-exercise words.
-
-EXAMPLES:
-
-"bench press 3 sets, first set 30kg 8 reps, 
-second set 25kg 6 reps with spot, third set 
-20kg 4 reps till failure"
-→ {
-  "name": "Bench Press",
-  "muscle_group": "Chest",
-  "sets": [
-    {"set_number": 1, "reps": 8, "weight": 30, 
-     "unit": "kg", "with_spotter": false, 
-     "to_failure": false, "notes": ""},
-    {"set_number": 2, "reps": 6, "weight": 25, 
-     "unit": "kg", "with_spotter": true, 
-     "to_failure": false, "notes": "with spotter"},
-    {"set_number": 3, "reps": 4, "weight": 20, 
-     "unit": "kg", "with_spotter": false, 
-     "to_failure": true, "notes": "failure set"}
-  ]
-}
-
-"pull ups 4 sets, first 3 sets bodyweight 10 reps, 
-last set till failure with spot"
-→ {
-  "name": "Pull Ups",
-  "muscle_group": "Back",
-  "sets": [
-    {"set_number": 1, "reps": 10, "weight": 0,
-     "unit": "kg", "with_spotter": false,
-     "to_failure": false, "notes": ""},
-    {"set_number": 2, "reps": 10, "weight": 0,
-     "unit": "kg", "with_spotter": false,
-     "to_failure": false, "notes": ""},
-    {"set_number": 3, "reps": 10, "weight": 0,
-     "unit": "kg", "with_spotter": false,
-     "to_failure": false, "notes": ""},
-    {"set_number": 4, "reps": 0, "weight": 0,
-     "unit": "kg", "with_spotter": true,
-     "to_failure": true, "notes": "failure set with spotter"}
-  ]
-}
-
-"incline dumbbell 3 sets 30kg 10 reps"
-→ {
-  "name": "Incline Dumbbell Press",
-  "muscle_group": "Chest",
-  "sets": [
-    {"set_number": 1, "reps": 10, "weight": 30,
-     "unit": "kg", "with_spotter": false,
-     "to_failure": false, "notes": ""},
-    {"set_number": 2, "reps": 10, "weight": 30,
-     "unit": "kg", "with_spotter": false,
-     "to_failure": false, "notes": ""},
-    {"set_number": 3, "reps": 10, "weight": 30,
-     "unit": "kg", "with_spotter": false,
-     "to_failure": false, "notes": ""}
-  ]
-}
-
-Return ONLY this JSON structure:
-{
-  "exercises": [
-    {
-      "name": "Exercise Name",
-      "muscle_group": "Chest",
-      "sets": [
-        {
-          "set_number": 1,
-          "reps": 8,
-          "weight": 30,
-          "unit": "kg",
-          "with_spotter": false,
-          "to_failure": false,
-          "notes": ""
-        }
-      ]
-    }
-  ]
-}
-
-Transcript: """ + transcript
+For multiple exercises, return multiple objects in the array.
+"""
     
     try:
         r = requests.post(
