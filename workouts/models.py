@@ -317,7 +317,8 @@ class BodyScan(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.week_number:
-            from datetime import date
-            self.week_number = self.scan_date.isocalendar()[1] \
-                if self.scan_date else date.today().isocalendar()[1]
+            # Use date.today() directly — scan_date is auto_now_add
+            # and is not yet set when save() is first called
+            from datetime import date as _date
+            self.week_number = _date.today().isocalendar()[1]
         super().save(*args, **kwargs)
