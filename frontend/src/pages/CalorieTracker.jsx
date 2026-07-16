@@ -264,7 +264,7 @@ export default function CalorieTracker() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-semibold">
                 <span className="text-slate-800">Fats</span>
-                <span className="text-slate-500 font-bold">{summary.total_fat}g / {summary.target_fat || 65}g</span>
+                <span className="text-slate-500 font-bold">{(summary.total_fat ?? 0)}g / {summary.target_fat || 65}g</span>
               </div>
               <div className="w-full bg-dark-bg h-2 rounded-full overflow-hidden border border-dark-border">
                 <motion.div 
