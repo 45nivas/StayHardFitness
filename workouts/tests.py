@@ -34,16 +34,16 @@ class StayHardFitnessTestSuite(TestCase):
         )
 
     def test_home_redirects(self):
-        # Unauthenticated redirects to login
+        # Unauthenticated redirects to React dev server
         response = self.client.get('/')
         self.assertEqual(response.status_code, 302)
-        self.assertIn('/login/', response.url)
+        self.assertEqual(response.url, 'http://localhost:5173/')
         
-        # Authenticated redirects to workout selection
+        # Authenticated redirects to React dev server
         self.client.login(username=self.username, password=self.password)
         response = self.client.get('/')
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('workout_selection'))
+        self.assertEqual(response.url, 'http://localhost:5173/')
 
     def test_signup_view_get(self):
         response = self.client.get(reverse('signup'))
