@@ -78,5 +78,9 @@ urlpatterns = [
     path('api/body-scan/compare/',
          views.compare_body_scans,
          name='compare_body_scans'),
+    # --- ADDED: React Analytics API ---
+    path('api/analytics/',
+         views.analytics_api,
+         name='analytics_api'),
 ]
 

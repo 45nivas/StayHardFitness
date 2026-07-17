@@ -33,7 +33,7 @@ export default function Layout({ children, user, setUser }) {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: BarChart2 },
     { name: 'Workouts', path: '/workouts', icon: Dumbbell },
-    { name: 'Analytics', path: '/analytics/', icon: TrendingUp, external: true },
+    { name: 'Analytics', path: '/analytics', icon: TrendingUp },
     { name: 'Calorie Tracker', path: '/diet', icon: Utensils },
     { name: '1RM Calculator', path: '/1rm', icon: Calculator },
     { name: 'Carb Cycling', path: '/carb-cycling', icon: Flame },
@@ -62,18 +62,6 @@ export default function Layout({ children, user, setUser }) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              if (item.external) {
-                return (
-                  <a
-                    key={item.path}
-                    href={item.path}
-                    className="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                  >
-                    <Icon className="w-5 h-5 shrink-0" />
-                    <span>{item.name}</span>
-                  </a>
-                );
-              }
               return (
                 <Link
                   key={item.path}

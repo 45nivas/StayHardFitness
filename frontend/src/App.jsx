@@ -15,6 +15,7 @@ import CarbCycling from './pages/CarbCycling';
 import FitnessChat from './pages/FitnessChat';
 import BodyVision from './pages/BodyVision';
 import ProfileSetup from './pages/ProfileSetup';
+import Analytics from './pages/Analytics';
 
 const API_BASE_URL = 'http://localhost:8000';
 axios.defaults.withCredentials = true;
@@ -72,6 +73,7 @@ function App() {
                   <Route path="/" element={<Dashboard user={user} />} />
                   <Route path="/workouts" element={<Workouts />} />
                   <Route path="/workout/:workout_name" element={<WorkoutPage />} />
+                  <Route path="/analytics" element={<Analytics />} />
                   <Route path="/diet" element={<CalorieTracker />} />
                   <Route path="/1rm" element={<OneRepMax />} />
                   <Route path="/carb-cycling" element={<CarbCycling />} />
