@@ -21,6 +21,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import axios from 'axios';
+import { getCsrfToken } from '../utils/csrf';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -140,7 +141,8 @@ export default function BodyVision() {
     try {
       const res = await axios.post(`${API_BASE_URL}/api/analyse-body/`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'X-CSRFToken': getCsrfToken(),
         }
       });
 

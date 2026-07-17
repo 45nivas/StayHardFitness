@@ -15,6 +15,7 @@ import {
   Flame
 } from 'lucide-react';
 import axios from 'axios';
+import { getCsrfToken } from '../utils/csrf';
 import Chart from 'chart.js/auto';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -129,6 +130,8 @@ export default function Workouts() {
         sleep_quality: checkinSleep,
         soreness_level: checkinSoreness,
         notes: checkinNotes,
+      }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
       });
       if (res.data.status === 'ok') {
         setCheckinModalOpen(false);
@@ -453,7 +456,8 @@ export default function Workouts() {
           
           const res = await axios.post(`${API_BASE_URL}/api/transcribe-audio/`, formData, {
             headers: {
-              'Content-Type': 'multipart/form-data'
+              'Content-Type': 'multipart/form-data',
+              'X-CSRFToken': getCsrfToken(),
             }
           });
           
@@ -570,6 +574,8 @@ export default function Workouts() {
     try {
       const res = await axios.post(`${API_BASE_URL}/api/parse-workout-voice/`, {
         text: correctedText
+      }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
       });
       if (res.data.success && res.data.parsed && res.data.parsed.length > 0) {
         setPreviewLogs(res.data.parsed);
@@ -589,6 +595,8 @@ export default function Workouts() {
     try {
       const res = await axios.post(`${API_BASE_URL}/api/confirm-workout-log/`, {
         exercises: previewLogs
+      }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
       });
       if (res.data.success && res.data.logged) {
         fetchTodayWorkouts();
@@ -619,7 +627,9 @@ export default function Workouts() {
     try {
       await Promise.all(
         toast.logs.map(log => 
-          axios.post(`${API_BASE_URL}/api/delete-workout/`, { id: log.id })
+          axios.post(`${API_BASE_URL}/api/delete-workout/`, { id: log.id }, {
+            headers: { 'X-CSRFToken': getCsrfToken() }
+          })
         )
       );
       fetchTodayWorkouts();
@@ -632,7 +642,9 @@ export default function Workouts() {
 
   const handleDeleteWorkout = async (logId) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/delete-workout/`, { id: logId });
+      const res = await axios.post(`${API_BASE_URL}/api/delete-workout/`, { id: logId }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
+      });
       if (res.data.success) {
         setLoggedWorkouts(workouts => workouts.filter(w => w.id !== logId));
       }

@@ -11,6 +11,7 @@ import {
   Calculator 
 } from 'lucide-react';
 import axios from 'axios';
+import { getCsrfToken } from '../utils/csrf';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -105,6 +106,8 @@ export default function CalorieTracker() {
     try {
       const res = await axios.post(`${API_BASE_URL}/api/voice-log/`, {
         text: inputText
+      }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
       });
 
       const data = res.data;
@@ -143,6 +146,8 @@ export default function CalorieTracker() {
         },
         quantity: quantity,
         unit: unit
+      }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
       });
 
       setShowPicker(false);
@@ -159,7 +164,9 @@ export default function CalorieTracker() {
 
   const handleDeleteMeal = async (mealId) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/delete-meal/`, { id: mealId });
+      const res = await axios.post(`${API_BASE_URL}/api/delete-meal/`, { id: mealId }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
+      });
       if (res.data.success) {
         setLoggedMeals(meals => meals.filter(m => m.id !== mealId));
         fetchDailySummary();

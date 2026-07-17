@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Send, RefreshCw, Sparkles, User, ShieldCheck, HelpCircle } from 'lucide-react';
 import axios from 'axios';
+import { getCsrfToken } from '../utils/csrf';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -57,6 +58,8 @@ export default function FitnessChat() {
     try {
       const res = await axios.post(`${API_BASE_URL}/api/chat/`, {
         message: userMsg
+      }, {
+        headers: { 'X-CSRFToken': getCsrfToken() }
       });
 
       // Update message bubble with actual AI response
