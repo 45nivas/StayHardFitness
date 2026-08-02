@@ -35,37 +35,69 @@ def home(request):
 
 @login_required
 def analytics_api(request):
-    """
-    GET /api/analytics/
-    Returns all data needed for the React Analytics page.
-    """
     from workouts.models import WorkoutLog, SetLog
-    from .shared import calculate_e1rm
+    from workouts.shared import calculate_e1rm, get_current_pr_e1rm
     from django.utils import timezone
     from datetime import timedelta
+    from collections import defaultdict
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     today = timezone.now().date()
-    
-    # Last 30 days of WorkoutLog for this user
     thirty_days_ago = today - timedelta(days=30)
-    
-    logs = WorkoutLog.objects.filter(
-        user=request.user,
-        date__gte=thirty_days_ago
-    ).order_by('-date')
+    user = request.user
 
-    # Today's logs with PR detection
-    today_logs = WorkoutLog.objects.filter(
-        user=request.user, 
-        date=today
-    ).order_by('created_at')
+    # --- Define independent tasks ---
 
-    # Build today's ledger with PR flags
-    from .shared import get_current_pr_e1rm
+    def fetch_recent_logs():
+        return list(WorkoutLog.objects.filter(
+            user=user,
+            date__gte=thirty_days_ago
+        ).order_by('-date'))
+
+    def fetch_today_logs():
+        return list(WorkoutLog.objects.filter(
+            user=user,
+            date=today
+        ).order_by('created_at'))
+
+    def calculate_streak():
+        streak = 0
+        check_date = today
+        while True:
+            if WorkoutLog.objects.filter(
+                user=user, date=check_date
+            ).exists():
+                streak += 1
+                check_date -= timedelta(days=1)
+            else:
+                break
+        return streak
+
+    # --- Run all three in parallel ---
+    results = {}
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {
+            executor.submit(fetch_recent_logs): 'recent_logs',
+            executor.submit(fetch_today_logs):  'today_logs',
+            executor.submit(calculate_streak):  'streak',
+        }
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                results[key] = future.result()
+            except Exception as e:
+                results[key] = [] if key != 'streak' else 0
+
+    recent_logs = results['recent_logs']
+    today_logs  = results['today_logs']
+    streak      = results['streak']
+
+    # --- PR detection on today's logs (sequential, depends on today_logs) ---
+    from workouts.shared import get_current_pr_e1rm
     ledger = []
     for log in today_logs:
         sets = list(SetLog.objects.filter(workout_log=log))
-        prev_pr = get_current_pr_e1rm(request.user, log.exercise_name)
+        prev_pr = get_current_pr_e1rm(user, log.exercise_name)
         is_pr = False
         if sets:
             for s in sets:
@@ -81,38 +113,26 @@ def analytics_api(request):
             'id': log.id,
             'exercise_name': log.exercise_name,
             'muscle_group': log.muscle_group,
-            'sets': log.sets if hasattr(log, 'sets') else 
-                    SetLog.objects.filter(workout_log=log).count(),
+            'sets': SetLog.objects.filter(workout_log=log).count(),
             'weight': log.weight,
             'reps': log.reps,
             'date': log.date.strftime('%d %b %Y'),
             'is_pr': is_pr,
         })
 
-    # Volume by muscle group (last 30 days)
-    from collections import defaultdict
+    # --- Volume by muscle group (depends on recent_logs) ---
     volume_by_muscle = defaultdict(float)
-    for log in logs:
+    for log in recent_logs:
         if log.muscle_group and log.weight and log.reps:
             volume_by_muscle[log.muscle_group] += log.weight * log.reps
-
-    # Streak calculation
-    streak = 0
-    check_date = today
-    while True:
-        if WorkoutLog.objects.filter(
-            user=request.user, date=check_date
-        ).exists():
-            streak += 1
-            check_date -= timedelta(days=1)
-        else:
-            break
 
     return JsonResponse({
         'today_ledger': ledger,
         'volume_by_muscle': dict(volume_by_muscle),
         'streak': streak,
-        'total_sessions_30d': logs.values('date').distinct().count(),
+        'total_sessions_30d': len(set(
+            log.date for log in recent_logs
+        )),
     })
 
 
