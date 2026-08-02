@@ -27,6 +27,93 @@ from workouts.fitness_chatbot import FitnessChatbot
 # Shared global states
 from .shared import MEDIAPIPE_AVAILABLE, RepCounter, REP_COUNTER_AVAILABLE, WORKOUT_STATS, WORKOUT_STATS_LOCK, GEMINI_API_KEY, GEMINI_URL, NUTRITION_DATABASE
 
+# --- ADDED: Three-layer user context for OS Architect ---
+def build_user_context(user):
+    """
+    Builds a structured context string from three layers of user data.
+    Injected into every OS Architect prompt.
+    """
+    from workouts.models import WorkoutLog, WeeklyCheckin, UserProfile
+    from django.utils import timezone
+    from datetime import timedelta
+
+    context_parts = []
+
+    # LAYER 1 — Hard traits (UserProfile)
+    try:
+        profile = UserProfile.objects.get(user=user)
+        goal = getattr(profile, 'primary_goal', 'not set')
+        if hasattr(profile, 'get_primary_goal_display'):
+            goal = profile.get_primary_goal_display()
+        cal = getattr(profile, 'calories_per_day', 'not set') or 'not set'
+        context_parts.append(f"""[ATHLETE PROFILE]
+Weight: {profile.weight or 'unknown'} kg
+Height: {profile.height or 'unknown'} cm  
+Goal: {goal}
+Weak muscle groups: {profile.weak_muscles or 'none identified'}
+Calorie target: {cal} kcal""")
+    except Exception:
+        context_parts.append("[ATHLETE PROFILE] No profile set up yet.")
+
+    # LAYER 2 — Recent memory (last 7 days WorkoutLog)
+    try:
+        today = timezone.now().date()
+        week_ago = today - timedelta(days=7)
+        recent_logs = WorkoutLog.objects.filter(
+            user=user,
+            date__gte=week_ago
+        ).order_by('-date')[:10]
+
+        if recent_logs:
+            log_lines = []
+            for log in recent_logs:
+                log_lines.append(
+                    f"  - {log.date}: {log.exercise_name} "
+                    f"({log.muscle_group}) — "
+                    f"{log.weight}kg x {log.reps} reps"
+                )
+            context_parts.append(
+                "[RECENT TRAINING (last 7 days)]\n" + 
+                "\n".join(log_lines)
+            )
+        else:
+            context_parts.append(
+                "[RECENT TRAINING] No workouts logged in last 7 days."
+            )
+    except Exception:
+        pass
+
+    # LAYER 3 — Micro persona (last 4 weekly check-ins)
+    try:
+        checkins = WeeklyCheckin.objects.filter(
+            user=user
+        ).order_by('-week_start')[:4]
+
+        if checkins:
+            checkin_lines = []
+            for c in checkins:
+                bw = f"{c.bodyweight_kg}kg" if c.bodyweight_kg else "not logged"
+                checkin_lines.append(
+                    f"  - Week of {c.week_start}: "
+                    f"Energy {c.energy_level}/5, "
+                    f"Sleep {c.sleep_quality}/5, "
+                    f"Soreness {c.soreness_level}/5, "
+                    f"Bodyweight: {bw}"
+                )
+            context_parts.append(
+                "[WEEKLY RECOVERY TRENDS (last 4 weeks)]\n" + 
+                "\n".join(checkin_lines)
+            )
+        else:
+            context_parts.append(
+                "[WEEKLY RECOVERY TRENDS] No check-ins logged yet."
+            )
+    except Exception:
+        pass
+
+    return "\n\n".join(context_parts)
+
+
 @login_required
 def fitness_chat(request):
     """Fitness chatbot interface with intent-based routing and multi-tier fallback"""
@@ -92,17 +179,12 @@ def fitness_chat(request):
                 "tier": "cache"
             })
             
-        # Context-aware enhancement: inject user profile to user message for accurate calculations
-        context_msg = user_message
-        try:
-            user_profile = UserProfile.objects.get(user=request.user)
-            profile_context = f"[Context: User weight={user_profile.weight}kg, height={user_profile.height}cm, age={user_profile.age}, gender={user_profile.get_gender_display()}, goal={user_profile.get_primary_goal_display()}]"
-            context_msg = f"{profile_context} {user_message}"
-        except UserProfile.DoesNotExist:
-            pass
+        # Context-aware enhancement: inject three-layer user context
+        user_context = build_user_context(request.user)
+        context_msg = f"{user_context}\n\n[USER MESSAGE] {user_message}"
 
         # Layer 3: get response through fallback chain
-        result = get_chat_response(intent, context_msg)
+        result = get_chat_response(intent, context_msg, user_context=user_context)
         bot_response = result["reply"]
         
         # Save chat message in database

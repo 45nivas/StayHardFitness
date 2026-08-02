@@ -99,9 +99,13 @@ def get_local_ollama_response(system_prompt, user_message, model="qwen2.5:3b"):
         pass
     return None
 
-def get_chat_response(intent: str, user_message: str) -> dict:
+def get_chat_response(intent: str, user_message: str, user_context: str = "") -> dict:
     from workouts.chat.flows import FLOW_PROMPTS
-    system_prompt = FLOW_PROMPTS.get(intent, FLOW_PROMPTS["general_fitness"])
+    base_prompt = FLOW_PROMPTS.get(intent, FLOW_PROMPTS["general_fitness"])
+    if "{user_context}" in base_prompt:
+        system_prompt = base_prompt.format(user_context=user_context if user_context else "[ATHLETE CONTEXT] No profile set up yet.")
+    else:
+        system_prompt = base_prompt
     
     # Tier 1: Groq llama3-8b (Bypassed)
     response = get_groq_response(system_prompt, user_message, "llama3-8b-8192")

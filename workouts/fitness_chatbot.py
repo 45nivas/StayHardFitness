@@ -356,7 +356,11 @@ CRITICAL INSTRUCTION: If the user asks for a workout plan, a transformation prog
 11. Occupation
 12. Monthly budget for coaching
 
-[USER PROFILE] {user_profile_data}
+[ATHLETE CONTEXT - USE THIS TO PERSONALIZE YOUR RESPONSE]
+{user_profile_data}
+
+IMPORTANT: Reference the athlete's actual recent training, recovery scores, and weak muscles in your response where relevant. Do not ask for information you already have above.
+
 [USER MESSAGE] {message}
 
 [INSTRUCTIONS] Give highly specific, professional advice. If they request a plan, output the 12-point questionnaire first. Keep responses structured and concise."""
@@ -382,7 +386,11 @@ CRITICAL INSTRUCTION: If the user asks for a workout plan, a transformation prog
 9. Training hours per week (1-2 / 3–5 / 6+)
 10. Occupation & Monthly budget for coaching
 
-[USER PROFILE] {user_profile_data}
+[ATHLETE CONTEXT - USE THIS TO PERSONALIZE YOUR RESPONSE]
+{user_profile_data}
+
+IMPORTANT: Reference the athlete's actual recent training, recovery scores, and weak muscles in your response where relevant. Do not ask for information you already have above.
+
 [USER MESSAGE] {message}
 
 [INSTRUCTIONS] Be strictly professional and highly knowledgeable. Reference clinical biomechanics when helpful. If they request a plan, output the questionnaire first."""
