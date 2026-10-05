@@ -111,6 +111,38 @@ Calorie target: {cal} kcal""")
     except Exception:
         pass
 
+    # LAYER 4 — Clinical Biomarkers & Longevity (ClinicalSession)
+    try:
+        from workouts.models import ClinicalSession
+        clinical_sess = ClinicalSession.objects.filter(user=user).first()
+        if clinical_sess and clinical_sess.profile_json:
+            import json
+            c_prof = json.loads(clinical_sess.profile_json)
+            bio_lines = []
+            for b in (c_prof.get('biomarkers') or [])[:6]:
+                bio_lines.append(f"  - {b.get('name')}: {b.get('value')} {b.get('unit')} ({b.get('status')})")
+
+            conditions = c_prof.get('medical_conditions', [])
+            allergies = c_prof.get('allergies', [])
+
+            bio_age_str = ""
+            if clinical_sess.bio_age_json:
+                bio_data = json.loads(clinical_sess.bio_age_json)
+                bio_age_str = f"Biological Age: {bio_data.get('biological_age')} yrs (Chronological: {bio_data.get('chronological_age')}), Longevity Score: {bio_data.get('longevity_score')}%"
+
+            report_str = "[CLINICAL BIOMARKERS & LONGEVITY PROFILE]\n"
+            if bio_age_str:
+                report_str += f"{bio_age_str}\n"
+            if conditions:
+                report_str += f"Medical flags: {', '.join(conditions)}\n"
+            if allergies:
+                report_str += f"Allergies: {', '.join(allergies)}\n"
+            if bio_lines:
+                report_str += "Key Biomarkers:\n" + "\n".join(bio_lines)
+            context_parts.append(report_str)
+    except Exception:
+        pass
+
     return "\n\n".join(context_parts)
 
 

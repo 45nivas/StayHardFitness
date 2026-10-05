@@ -96,6 +96,20 @@ export default function Dashboard({ user }) {
       icon: Camera,
       color: 'from-emerald-500/5 to-transparent' 
     },
+    { 
+      name: 'Analytics & PRs', 
+      desc: 'Parallelized telemetry query engine tracking 1RM trends and workout volume.', 
+      path: '/analytics', 
+      icon: TrendingUp,
+      color: 'from-indigo-500/5 to-transparent' 
+    },
+    { 
+      name: 'Clinical Lab & RAG', 
+      desc: '8-Agent MCP Swarm analyzing blood panels, longevity metrics & PubMed RAG.', 
+      path: '/clinical-lab', 
+      icon: Activity,
+      color: 'from-amber-500/5 to-transparent' 
+    },
   ];
 
   if (loadingProfile) {
