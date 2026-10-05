@@ -83,5 +83,21 @@ urlpatterns = [
     path('api/analytics/',
          views.analytics_api,
          name='analytics_api'),
+    # --- ADDED: Clinical Lab & Multi-Agent RAG ---
+    path('api/clinical/health/',
+         views.clinical_health,
+         name='clinical_health'),
+    path('api/clinical/upload/',
+         views.clinical_upload,
+         name='clinical_upload'),
+    path('api/clinical/chat/',
+         views.clinical_chat,
+         name='clinical_chat'),
+    path('api/clinical/report/download/',
+         views.clinical_download_report,
+         name='clinical_download_report'),
+    path('api/clinical/clear/',
+         views.clinical_clear,
+         name='clinical_clear'),
 ]
 

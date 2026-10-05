@@ -9,7 +9,8 @@ import {
   BarChart2, 
   LogOut, 
   Flame,
-  TrendingUp
+  TrendingUp,
+  Activity
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -39,6 +40,7 @@ export default function Layout({ children, user, setUser }) {
     { name: 'Carb Cycling', path: '/carb-cycling', icon: Flame },
     { name: 'AI Coach Chat', path: '/chat', icon: MessageSquare },
     { name: 'Body Vision', path: '/body-vision', icon: Camera },
+    { name: 'Clinical Lab & RAG', path: '/clinical-lab', icon: Activity },
   ];
 
   return (

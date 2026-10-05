@@ -52,3 +52,6 @@ Thumbs.db
 
 # Media files
 media/
+body_scans/
+chroma_clinical_db/
+

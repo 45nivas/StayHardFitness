@@ -322,3 +322,57 @@ class BodyScan(models.Model):
             from datetime import date as _date
             self.week_number = _date.today().isocalendar()[1]
         super().save(*args, **kwargs)
+
+
+# --- ADDED: Clinical Lab & Multi-Agent RAG ---
+class ClinicalSession(models.Model):
+    """
+    Stores clinical laboratory analysis, blood panel biomarkers,
+    demographics, bio-age calculation, and generated medical meal/training plans.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='clinical_sessions'
+    )
+    session_id = models.CharField(max_length=100, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    profile_json = models.TextField(blank=True, default='')
+    uploaded_files_json = models.TextField(blank=True, default='[]')
+    meal_plan_json = models.TextField(blank=True, default='')
+    training_plan_json = models.TextField(blank=True, default='')
+    bio_age_json = models.TextField(blank=True, default='')
+    critique_json = models.TextField(blank=True, default='')
+    audit_report = models.TextField(blank=True, default='')
+    corrections_json = models.TextField(blank=True, default='[]')
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        owner = self.user.username if self.user else "Anonymous"
+        return f"ClinicalSession {self.session_id[:8]} ({owner})"
+
+
+class ClinicalChatMessage(models.Model):
+    """
+    Stores consultation dialogue between user and the Multi-Agent Clinical Board.
+    """
+    session = models.ForeignKey(
+        ClinicalSession,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    role = models.CharField(max_length=20)  # 'user' | 'assistant'
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"ClinicalMessage ({self.role}) at {self.timestamp}"
+

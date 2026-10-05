@@ -914,6 +914,51 @@ class VoiceWorkoutLoggerTestCase(TestCase):
         self.assertIn('bench press', res_data['exercises'])
 
 
+class ClinicalLabTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.username = 'clinical_athlete'
+        self.password = 'ClinicalPass123!'
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+
+    def test_clinical_health_endpoint(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(reverse('clinical_health'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'healthy')
+        self.assertIn('agents', data)
+        self.assertIn('clinical_analyzer', data['agents'])
+        self.assertIn('coordinator', data['agents'])
+        self.assertIn('vector_db', data)
+
+    def test_clinical_chat_greeting(self):
+        self.client.login(username=self.username, password=self.password)
+        payload = json.dumps({'message': 'hello'})
+        response = self.client.post(
+            reverse('clinical_chat'),
+            data=payload,
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertIn('NutriMind', data['response'])
+
+    def test_clinical_download_report_no_profile_fails(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(reverse('clinical_download_report'))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.json())
+
+    def test_clinical_clear_endpoint(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.post(reverse('clinical_clear'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+
+
+
 
 
 

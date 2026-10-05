@@ -16,6 +16,7 @@ import FitnessChat from './pages/FitnessChat';
 import BodyVision from './pages/BodyVision';
 import ProfileSetup from './pages/ProfileSetup';
 import Analytics from './pages/Analytics';
+import ClinicalLab from './pages/ClinicalLab';
 
 const API_BASE_URL = 'http://localhost:8000';
 axios.defaults.withCredentials = true;
@@ -79,6 +80,7 @@ function App() {
                   <Route path="/carb-cycling" element={<CarbCycling />} />
                   <Route path="/chat" element={<FitnessChat />} />
                   <Route path="/body-vision" element={<BodyVision />} />
+                  <Route path="/clinical-lab" element={<ClinicalLab />} />
                   <Route path="/profile" element={<ProfileSetup />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
