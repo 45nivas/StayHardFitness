@@ -17,6 +17,7 @@ import BodyVision from './pages/BodyVision';
 import ProfileSetup from './pages/ProfileSetup';
 import Analytics from './pages/Analytics';
 import ClinicalLab from './pages/ClinicalLab';
+import WearableIntelligence from './pages/WearableIntelligence';
 
 const API_BASE_URL = 'http://localhost:8000';
 axios.defaults.withCredentials = true;
@@ -81,6 +82,8 @@ function App() {
                   <Route path="/chat" element={<FitnessChat />} />
                   <Route path="/body-vision" element={<BodyVision />} />
                   <Route path="/clinical-lab" element={<ClinicalLab />} />
+                  <Route path="/wearable" element={<WearableIntelligence />} />
+                  <Route path="/fitbit" element={<WearableIntelligence />} />
                   <Route path="/profile" element={<ProfileSetup />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

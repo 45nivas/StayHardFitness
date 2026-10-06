@@ -55,3 +55,10 @@ media/
 body_scans/
 chroma_clinical_db/
 
+# Wearable / OAuth tokens
+tokens.json
+client_secret*.json
+!client_secret.example.json
+!tokens.example.json
+
+

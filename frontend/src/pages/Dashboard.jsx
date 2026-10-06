@@ -10,7 +10,8 @@ import {
   Flame, 
   Sparkles, 
   TrendingUp, 
-  Activity 
+  Activity,
+  Watch 
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -109,6 +110,13 @@ export default function Dashboard({ user }) {
       path: '/clinical-lab', 
       icon: Activity,
       color: 'from-amber-500/5 to-transparent' 
+    },
+    { 
+      name: 'Wearable Intelligence', 
+      desc: 'Fitbit Pulse telemetry & NetworkX Knowledge Graph cross-day reasoning.', 
+      path: '/wearable', 
+      icon: Watch,
+      color: 'from-violet-500/5 to-transparent' 
     },
   ];
 

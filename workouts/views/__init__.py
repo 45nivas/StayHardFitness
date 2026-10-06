@@ -7,3 +7,4 @@ from .posture import *
 from .chat import *
 from .calculators import *
 from .clinical import *
+from .wearable import *

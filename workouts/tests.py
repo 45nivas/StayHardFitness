@@ -958,6 +958,56 @@ class ClinicalLabTestCase(TestCase):
         self.assertTrue(response.json()['success'])
 
 
+class WearableIntelligenceTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.username = 'wearable_athlete'
+        self.password = 'WearablePass123!'
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+
+    def test_wearable_status_endpoint(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(reverse('wearable_status_api'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('has_data', data)
+        self.assertIn('has_client_secret', data)
+        self.assertIn('client_id', data)
+
+    def test_wearable_data_endpoint(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(reverse('wearable_data_api'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('data', data)
+        self.assertIn('fetched_at', data)
+
+    def test_wearable_graph_stats_endpoint(self):
+        self.client.login(username=self.username, password=self.password)
+        response = self.client.get(reverse('wearable_graph_stats_api'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('stats', data)
+        self.assertIn('total_nodes', data['stats'])
+        self.assertIn('total_edges', data['stats'])
+
+    def test_wearable_ask_endpoint(self):
+        self.client.login(username=self.username, password=self.password)
+        payload = json.dumps({'question': 'Why was my energy low on 2026-08-02?'})
+        response = self.client.post(
+            reverse('wearable_ask_api'),
+            data=payload,
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('answer', data)
+        self.assertIn('evidence', data)
+        self.assertTrue(len(data['evidence']) > 0)
+
+
+
 
 
 

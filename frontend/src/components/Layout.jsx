@@ -10,7 +10,8 @@ import {
   LogOut, 
   Flame,
   TrendingUp,
-  Activity
+  Activity,
+  Watch
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -41,6 +42,7 @@ export default function Layout({ children, user, setUser }) {
     { name: 'AI Coach Chat', path: '/chat', icon: MessageSquare },
     { name: 'Body Vision', path: '/body-vision', icon: Camera },
     { name: 'Clinical Lab & RAG', path: '/clinical-lab', icon: Activity },
+    { name: 'Wearable Intelligence', path: '/wearable', icon: Watch },
   ];
 
   return (

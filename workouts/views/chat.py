@@ -143,7 +143,38 @@ Calorie target: {cal} kcal""")
     except Exception:
         pass
 
+    # LAYER 5 — Wearable IoT Biometrics & Sleep Knowledge Graph (WearableSession)
+    try:
+        from workouts.models import WearableSession
+        from workouts.views.wearable import get_wearable_agent
+        agent = get_wearable_agent(user)
+        days = agent.kg.get_days()
+        if days:
+            latest_date = days[-1]
+            day_sum = agent.get_day_summary(latest_date)
+            if day_sum and day_sum.get("status") == "success":
+                w_lines = [
+                    f"[WEARABLE IOT & RECOVERY KNOWLEDGE GRAPH (Date: {latest_date})]",
+                    f"- Daily Steps: {day_sum.get('total_steps', 0):,} steps",
+                    f"- Calories Burned: {day_sum.get('total_calories_burned', 0):,} kcal",
+                    f"- Active Duration: {day_sum.get('total_active_mins', 0)} mins (AZM: {day_sum.get('active_zone_mins', 0)}m)",
+                    f"- Average HR: {day_sum.get('average_hr') or 'N/A'} bpm",
+                    f"- Sleep Duration: {day_sum.get('total_sleep_hours', 0.0)} hrs",
+                    f"- Sleep Recovery Score: {day_sum.get('recovery_score', 'N/A')}/100",
+                    f"- Workout Performance Score: {day_sum.get('avg_workout_performance', 'N/A')}/100"
+                ]
+                sleep_s = day_sum.get("sleep_summary")
+                if sleep_s:
+                    w_lines.append(f"- Sleep Stages: Deep: {sleep_s.get('deep_mins', 0)}m, REM: {sleep_s.get('rem_mins', 0)}m, Light: {sleep_s.get('light_mins', 0)}m (Efficiency: {sleep_s.get('efficiency_pct', 0)}%)")
+                prior = day_sum.get("prior_night_sleep_impact")
+                if prior:
+                    w_lines.append(f"- Prior-Night Impact: {prior.get('sleep_hours', 0)}h sleep influenced next-day workout readiness (Score: {prior.get('recovery_score', 0)}/100)")
+                context_parts.append("\n".join(w_lines))
+    except Exception:
+        pass
+
     return "\n\n".join(context_parts)
+
 
 
 @login_required

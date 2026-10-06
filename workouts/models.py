@@ -376,3 +376,36 @@ class ClinicalChatMessage(models.Model):
     def __str__(self):
         return f"ClinicalMessage ({self.role}) at {self.timestamp}"
 
+
+# --- ADDED: Wearable Telemetry & Health Knowledge Graph ---
+class WearableSession(models.Model):
+    """
+    Stores synced wearable IoT telemetry (Fitbit / Google Health REST API v4),
+    daily steps, sleep stages, active zone minutes, and token credentials.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='wearable_sessions'
+    )
+    last_synced = models.DateTimeField(auto_now=True)
+    raw_data_json = models.TextField(blank=True, default='')
+    tokens_json = models.TextField(blank=True, default='')
+    total_steps = models.IntegerField(default=0)
+    total_calories_burned = models.IntegerField(default=0)
+    total_active_mins = models.IntegerField(default=0)
+    total_sleep_hours = models.FloatField(default=0.0)
+    recovery_score = models.IntegerField(default=0)
+    avg_workout_performance = models.IntegerField(default=0)
+    average_hr = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-last_synced']
+
+    def __str__(self):
+        owner = self.user.username if self.user else "System"
+        return f"WearableSession for {owner} ({self.total_steps} steps, rec: {self.recovery_score})"
+
+

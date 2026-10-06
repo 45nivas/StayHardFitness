@@ -1,0 +1,8 @@
+{
+  "access_token": "ya29.a0AfH6SM...EXAMPLE_TOKEN",
+  "expires_in": 3599,
+  "refresh_token": "1//04example...EXAMPLE_REFRESH",
+  "scope": "https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly https://www.googleapis.com/auth/googlehealth.sleep.readonly https://www.googleapis.com/auth/googlehealth.nutrition.readonly",
+  "token_type": "Bearer",
+  "acquired_at": "2026-08-01 12:00:00 UTC"
+}
