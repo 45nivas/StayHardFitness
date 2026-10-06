@@ -32,55 +32,93 @@ export default function Layout({ children, user, setUser }) {
     }
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/', icon: BarChart2 },
-    { name: 'Workouts', path: '/workouts', icon: Dumbbell },
-    { name: 'Analytics', path: '/analytics', icon: TrendingUp },
-    { name: 'Calorie Tracker', path: '/diet', icon: Utensils },
-    { name: '1RM Calculator', path: '/1rm', icon: Calculator },
-    { name: 'Carb Cycling', path: '/carb-cycling', icon: Flame },
-    { name: 'AI Coach Chat', path: '/chat', icon: MessageSquare },
-    { name: 'Body Vision', path: '/body-vision', icon: Camera },
-    { name: 'Clinical Lab & RAG', path: '/clinical-lab', icon: Activity },
-    { name: 'Wearable Intelligence', path: '/wearable', icon: Watch },
+  const navSections = [
+    {
+      title: "Core Platform",
+      items: [
+        { name: 'Dashboard', path: '/', icon: BarChart2 },
+        { name: 'AI Coach Chat', path: '/chat', icon: MessageSquare, badge: '5-Layer' },
+      ]
+    },
+    {
+      title: "Training & Physique",
+      items: [
+        { name: 'Workouts & Vision', path: '/workouts', icon: Dumbbell },
+        { name: 'Analytics & PRs', path: '/analytics', icon: TrendingUp },
+        { name: '1RM Strength', path: '/1rm', icon: Calculator },
+        { name: 'Body Vision AI', path: '/body-vision', icon: Camera },
+      ]
+    },
+    {
+      title: "Fuel & Nutrition",
+      items: [
+        { name: 'Calorie Tracker', path: '/diet', icon: Utensils },
+        { name: 'Carb Cycling', path: '/carb-cycling', icon: Flame },
+      ]
+    },
+    {
+      title: "Health & Telemetry",
+      items: [
+        { name: 'Wearable Pulse', path: '/wearable', icon: Watch },
+        { name: 'Clinical Lab RAG', path: '/clinical-lab', icon: Activity },
+      ]
+    }
   ];
 
   return (
     <div className="min-h-screen bg-dark-bg text-slate-900 flex flex-col md:flex-row">
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-dark-card border-r border-dark-border flex flex-col justify-between shrink-0 shadow-sm">
-        <div>
+      <aside className="w-full md:w-64 bg-dark-card border-r border-dark-border flex flex-col justify-between shrink-0 shadow-sm h-auto md:h-screen sticky top-0">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Brand Header */}
-          <div className="p-6 border-b border-dark-border flex items-center space-x-3">
+          <div className="p-5 border-b border-dark-border flex items-center space-x-3 shrink-0">
             <div className="bg-brand-red p-2 rounded-xl flex items-center justify-center shadow-md shadow-brand-red/10">
               <Dumbbell className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-xl font-extrabold tracking-tight text-slate-900 m-0 leading-none">STAY HARD</h1>
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1 block">Fitness Analyser</span>
+              <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1 block">Human Performance OS</span>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-brand-red text-white shadow-lg shadow-brand-red/15' 
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
+          {/* Navigation Links with Suite Sections */}
+          <nav className="p-3.5 space-y-4 overflow-y-auto flex-1 scrollbar-thin">
+            {navSections.map((sec) => (
+              <div key={sec.title} className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3 py-1 block">
+                  {sec.title}
+                </span>
+                {sec.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
+                        isActive 
+                          ? 'bg-brand-red text-white shadow-md shadow-brand-red/20' 
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{item.name}</span>
+                      </div>
+                      {item.badge && (
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
+                        }`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
 
