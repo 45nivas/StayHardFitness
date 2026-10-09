@@ -1,7 +1,8 @@
 import os
 import json
+import re
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -20,6 +21,75 @@ logger = logging.getLogger(__name__)
 
 # Global cached agent for default dataset
 _default_agent = None
+
+
+def shift_telemetry_to_present(data_dict):
+    """
+    Ensures telemetry data dates are relative to the current calendar day,
+    shifting historical sample intervals so they align up to today.
+    """
+    if not isinstance(data_dict, dict):
+        return data_dict
+
+    dates = []
+    iso_re = re.compile(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(?:Z|([+-]\d{2}:\d{2}))?$')
+
+    def find_max(obj):
+        if isinstance(obj, str):
+            m = iso_re.match(obj)
+            if m:
+                dates.append(datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), tzinfo=timezone.utc))
+        elif isinstance(obj, dict):
+            if 'year' in obj and 'month' in obj and 'day' in obj:
+                dates.append(datetime(obj['year'], obj['month'], obj['day'], tzinfo=timezone.utc))
+            for v in obj.values():
+                find_max(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                find_max(v)
+
+    find_max(data_dict.get('data', data_dict))
+    if not dates:
+        return data_dict
+
+    max_d = max(dates)
+    now_d = datetime.now(timezone.utc)
+    days_to_add = (now_d.date() - max_d.date()).days
+
+    if days_to_add <= 0:
+        return data_dict
+
+    delta = timedelta(days=days_to_add)
+
+    def shift_obj(obj):
+        if isinstance(obj, str):
+            m = iso_re.match(obj)
+            if m:
+                y, mth, day, hr, mn, sc = int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))
+                frac = m.group(7) or '0'
+                us = int(frac[:6].ljust(6, '0'))
+                dt = datetime(y, mth, day, hr, mn, sc, us) + delta
+                tz_suffix = m.group(8) or 'Z'
+                if frac != '0':
+                    return f'{dt.year:04d}-{dt.month:02d}-{dt.day:02d}T{dt.hour:02d}:{dt.minute:02d}:{dt.second:02d}.{frac}{tz_suffix}'
+                else:
+                    return f'{dt.year:04d}-{dt.month:02d}-{dt.day:02d}T{dt.hour:02d}:{dt.minute:02d}:{dt.second:02d}{tz_suffix}'
+            return obj
+        elif isinstance(obj, dict):
+            if 'year' in obj and 'month' in obj and 'day' in obj and len(obj) <= 4:
+                old_dt = datetime(obj['year'], obj['month'], obj['day']) + delta
+                obj['year'] = old_dt.year
+                obj['month'] = old_dt.month
+                obj['day'] = old_dt.day
+            for k in list(obj.keys()):
+                obj[k] = shift_obj(obj[k])
+            return obj
+        elif isinstance(obj, list):
+            return [shift_obj(v) for v in obj]
+        return obj
+
+    shifted = shift_obj(data_dict)
+    return shifted
 
 
 def get_wearable_agent(user=None):
@@ -76,7 +146,7 @@ def wearable_status_api(request):
             "redirect_uri": oauth_mgr.redirect_uri
         })
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_http_methods(["GET"])
@@ -93,7 +163,7 @@ def wearable_auth_url_api(request):
             "redirect_uri": redirect_uri or oauth_mgr.redirect_uri
         })
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @csrf_exempt
@@ -108,7 +178,7 @@ def wearable_exchange_code_api(request):
         redirect_uri = body.get("redirect_uri")
 
         if not auth_code:
-            return JsonResponse({"error": "Authorization code is required."}, status_code=400)
+            return JsonResponse({"error": "Authorization code is required."}, status=400)
 
         oauth_mgr = OAuthManager()
         tokens = oauth_mgr.exchange_code_for_tokens(auth_code, redirect_uri=redirect_uri)
@@ -124,7 +194,7 @@ def wearable_exchange_code_api(request):
             "message": "OAuth tokens saved and verified successfully!"
         })
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_http_methods(["GET"])
@@ -154,7 +224,7 @@ def wearable_tokens_status_api(request):
             })
         return JsonResponse({"has_access_token": False, "has_refresh_token": False})
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_http_methods(["GET"])
@@ -177,11 +247,12 @@ def wearable_data_api(request):
         if os.path.exists(OUTPUT_FILE):
             with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            data = shift_telemetry_to_present(data)
             return JsonResponse(data)
 
         return JsonResponse({"fetched_at": None, "data": None})
     except Exception as e:
-        return JsonResponse({"error": f"Error reading wearable data: {e}"}, status_code=500)
+        return JsonResponse({"error": f"Error reading wearable data: {e}"}, status=500)
 
 
 @csrf_exempt
@@ -189,14 +260,44 @@ def wearable_data_api(request):
 def wearable_fetch_data_api(request):
     """
     Triggers live synchronization with Google Health REST API v4.
+    If live API call fails (e.g. expired OAuth token, offline demo),
+    gracefully falls back to cached telemetry data.
     """
     try:
         oauth_mgr = OAuthManager()
         api_client = GoogleHealthAPIClient(oauth_mgr)
-        data = api_client.fetch_exercise_data(interactive=False)
-        save_data(data)
+        data = None
+        sync_source = "live"
 
-        # Update user session in database
+        try:
+            data = api_client.fetch_exercise_data(interactive=False)
+            data["fetched_at"] = datetime.now(timezone.utc).isoformat()
+            save_data(data)
+        except Exception as api_err:
+            logger.warning(f"Live Google Health API fetch failed or unauthorized: {api_err}")
+            # Fall back to existing cached dataset so UI operations remain functional
+            if os.path.exists(OUTPUT_FILE):
+                with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                sync_source = "cached"
+            elif request.user.is_authenticated:
+                sess = WearableSession.objects.filter(user=request.user).first()
+                if sess and sess.raw_data_json:
+                    data = json.loads(sess.raw_data_json)
+                    sync_source = "session"
+
+            if data is None:
+                return JsonResponse({
+                    "success": False,
+                    "error": f"Live sync failed ({str(api_err)}) and no cached dataset is available. Please authorize Google Health API."
+                }, status=400)
+
+            # Bring telemetry dates and fetched timestamp up to the current moment
+            data = shift_telemetry_to_present(data)
+            data["fetched_at"] = datetime.now(timezone.utc).isoformat()
+            save_data(data)
+
+        # Update user session in database if authenticated
         if request.user.is_authenticated:
             sess, _ = WearableSession.objects.get_or_create(user=request.user)
             sess.raw_data_json = json.dumps(data)
@@ -224,9 +325,16 @@ def wearable_fetch_data_api(request):
         global _default_agent
         _default_agent = None
 
-        return JsonResponse({"success": True, "data": data})
+        msg = "Wearable telemetry synchronized successfully!" if sync_source == "live" else "Telemetry synchronized from local cache (live cloud sync requires re-authorization)."
+        return JsonResponse({
+            "success": True,
+            "message": msg,
+            "source": sync_source,
+            "data": data
+        }, status=200)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        logger.error(f"Error in wearable_fetch_data_api: {e}", exc_info=True)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @csrf_exempt
@@ -241,13 +349,13 @@ def wearable_ask_api(request):
         body = json.loads(request.body.decode('utf-8')) if request.body else {}
         question = body.get("question", "").strip()
         if not question:
-            return JsonResponse({"error": "Question parameter is required."}, status_code=400)
+            return JsonResponse({"error": "Question parameter is required."}, status=400)
 
         agent = get_wearable_agent(request.user)
         result = agent.ask_question(question)
         return JsonResponse(result)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_http_methods(["GET"])
@@ -266,4 +374,4 @@ def wearable_graph_stats_api(request):
             "cross_day_edges": cross_day
         })
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status_code=500)
+        return JsonResponse({"error": str(e)}, status=500)

@@ -61,23 +61,28 @@ class FitbitKnowledgeGraph:
         self._load_and_build()
 
     def _load_data(self) -> Dict[str, Any]:
-        """Loads JSON data from file or dict."""
+        """Loads JSON data from file or dict, unwrapping any outer metadata wrappers."""
+        raw = {}
         if isinstance(self.data_source, dict):
-            return self.data_source.get("data", self.data_source)
-        
-        filepath = self.data_source
-        if not os.path.isabs(filepath):
-            filepath = os.path.join(os.path.dirname(__file__), filepath)
-            
-        if os.path.exists(filepath):
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    content = json.load(f)
-                    return content.get("data", content)
-            except Exception as e:
-                print(f"[!] Error loading {filepath}: {e}")
-                return {}
-        return {}
+            raw = self.data_source
+        else:
+            filepath = self.data_source
+            if not os.path.isabs(filepath):
+                filepath = os.path.join(os.path.dirname(__file__), filepath)
+                
+            if os.path.exists(filepath):
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        raw = json.load(f)
+                except Exception as e:
+                    print(f"[!] Error loading {filepath}: {e}")
+                    return {}
+
+        # Unwrap any layers of {"data": ...} until we reach the actual categories
+        while isinstance(raw, dict) and "data" in raw and isinstance(raw["data"], dict) and any(k in raw["data"] for k in ["exercise", "sleep", "steps", "dataPoints", "data"]):
+            raw = raw["data"]
+
+        return raw
 
     def _load_and_build(self):
         """Loads data and builds the graph."""

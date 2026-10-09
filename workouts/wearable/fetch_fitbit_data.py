@@ -260,9 +260,14 @@ class GoogleHealthAPIClient:
 
 def save_data(data, filepath=OUTPUT_FILE):
     """Saves fetched JSON data to a local file with ISO timestamp."""
+    # Prevent double-nesting if already wrapped in metadata
+    actual_data = data
+    while isinstance(actual_data, dict) and "data" in actual_data and isinstance(actual_data["data"], dict) and any(k in actual_data["data"] for k in ["exercise", "sleep", "steps", "dataPoints", "data"]):
+        actual_data = actual_data["data"]
+
     payload = {
         "fetched_at": datetime.now(timezone.utc).isoformat(),
-        "data": data
+        "data": actual_data
     }
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)

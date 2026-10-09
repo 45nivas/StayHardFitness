@@ -96,7 +96,10 @@ export default function WearableIntelligence() {
     try {
       const res = await axios.post(`${API_BASE_URL}/api/wearable/fetch-data/`);
       if (res.data.success) {
-        showToast('Wearable telemetry synchronized successfully!', 'success');
+        showToast(res.data.message || 'Wearable telemetry synchronized successfully!', 'success');
+        if (res.data.data) {
+          setDataPayload(res.data.data);
+        }
         await loadAllData();
       } else {
         showToast(res.data.error || 'Failed to sync with Google Health API.', 'error');
@@ -588,10 +591,12 @@ export default function WearableIntelligence() {
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Suggested Queries:</span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  'Why was my energy low on 2026-08-02?',
+                  `Why was my energy low on ${latestDate}?`,
                   'What consistently happens before my best workouts?',
                   'Rank my best recovery days and explain why',
-                  'Compare 2026-08-01 and 2026-08-02 recovery metrics'
+                  sortedDates.length >= 2
+                    ? `Compare ${sortedDates[sortedDates.length - 2]} and ${latestDate} recovery metrics`
+                    : 'Compare recent recovery metrics'
                 ].map((chip) => (
                   <button
                     key={chip}
