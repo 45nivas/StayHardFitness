@@ -24,7 +24,8 @@ import {
   TrendingUp,
   Dumbbell,
   CheckCircle2,
-  Info
+  Info,
+  Sliders
 } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -41,6 +42,11 @@ export default function WearableIntelligence() {
   const [authCode, setAuthCode] = useState('');
   const [exchangingCode, setExchangingCode] = useState(false);
   const [notification, setNotification] = useState(null);
+
+  // Calibration State
+  const [showCalibrateModal, setShowCalibrateModal] = useState(false);
+  const [calibrateStepInput, setCalibrateStepInput] = useState('2639');
+  const [calibratingSteps, setCalibratingSteps] = useState(false);
 
   // Agent State
   const [agentQuestion, setAgentQuestion] = useState('');
@@ -90,6 +96,32 @@ export default function WearableIntelligence() {
     };
     fetchAuthUrl();
   }, [redirectUri]);
+
+  const handleCalibrateSteps = async () => {
+    const val = parseInt(calibrateStepInput, 10);
+    if (isNaN(val) || val < 0) {
+      showToast('Please enter a valid step count.', 'error');
+      return;
+    }
+    setCalibratingSteps(true);
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/wearable/calibrate/`, { steps: val });
+      if (res.data.success) {
+        showToast(res.data.message || `Steps calibrated to ${val.toLocaleString()}`, 'success');
+        if (res.data.data) {
+          setDataPayload(res.data.data);
+        }
+        setShowCalibrateModal(false);
+        await loadAllData();
+      } else {
+        showToast(res.data.error || 'Failed to calibrate steps.', 'error');
+      }
+    } catch (err) {
+      showToast(err.response?.data?.error || err.message || 'Calibration error.', 'error');
+    } finally {
+      setCalibratingSteps(false);
+    }
+  };
 
   const handleSyncData = async () => {
     setSyncing(true);
@@ -232,6 +264,58 @@ export default function WearableIntelligence() {
         </div>
       )}
 
+      {/* Step Calibration Modal */}
+      {showCalibrateModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-indigo-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 font-bold text-base">
+                <Footprints className="w-5 h-5 text-indigo-400" />
+                <span>Calibrate Live Fitbit Steps</span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowCalibrateModal(false)}
+                className="text-slate-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Match the dashboard with the exact step count currently showing on your physical Fitbit band:
+            </p>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-400">Current Steps on Your Fitbit</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="100000"
+                  value={calibrateStepInput}
+                  onChange={(e) => setCalibrateStepInput(e.target.value)}
+                  placeholder="e.g. 2639"
+                  className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  type="button"
+                  disabled={calibratingSteps || !calibrateStepInput}
+                  onClick={handleCalibrateSteps}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
+                >
+                  {calibratingSteps ? 'Applying...' : 'Apply Steps'}
+                </button>
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-1">
+              <div className="font-semibold text-slate-300">💡 Why calibrate?</div>
+              <div>
+                When live Google Cloud OAuth credentials are not authorized with your personal Google account, the app uses local high-fidelity telemetry. Calibrating lets you align your real-world metrics (e.g. 2,639 steps) with the AI reasoning graphs and analytics immediately.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/20 rounded-2xl p-6 md:p-8 shadow-xl text-white flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute -right-12 -top-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -264,14 +348,19 @@ export default function WearableIntelligence() {
 
         {/* Action Controls */}
         <div className="relative z-10 flex flex-wrap items-center gap-3">
-          <div className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 border ${
-            oauthStatus?.has_refresh_token
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-              : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${oauthStatus?.has_refresh_token ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`}></span>
-            <span>{oauthStatus?.has_refresh_token ? 'Google Health Connected' : 'Authorization Ready'}</span>
+          <div className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 border bg-amber-500/10 text-amber-300 border-amber-500/30">
+            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span>Local Telemetry (Calibrated)</span>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowCalibrateModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-800/90 hover:bg-slate-700/90 text-indigo-300 border border-indigo-500/30 shadow-md transition"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>Calibrate Steps</span>
+          </button>
 
           <button
             onClick={handleSyncData}

@@ -375,3 +375,81 @@ def wearable_graph_stats_api(request):
         })
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def wearable_calibrate_steps_api(request):
+    """
+    Calibrates today's active step count in the telemetry dataset and session.
+    Allows athletes to align demo/local data with their physical Fitbit band.
+    """
+    try:
+        body = json.loads(request.body.decode('utf-8')) if request.body else {}
+        target_steps = int(body.get("steps", 2639))
+        if target_steps < 0:
+            return JsonResponse({"error": "Step count cannot be negative."}, status=400)
+
+        if not os.path.exists(OUTPUT_FILE):
+            return JsonResponse({"error": "No telemetry dataset found to calibrate."}, status=404)
+
+        with open(OUTPUT_FILE, 'r', encoding='utf-8') as f:
+            data_dict = json.load(f)
+
+        data_dict = shift_telemetry_to_present(data_dict)
+        data_dict["fetched_at"] = datetime.now(timezone.utc).isoformat()
+
+        pts = data_dict.get('data', {}).get('steps', {}).get('dataPoints', [])
+        dates = []
+        for p in pts:
+            civil = p.get('steps', {}).get('interval', {}).get('civilStartTime', {}).get('date', {})
+            if civil:
+                dates.append(f"{civil.get('year', 0):04d}-{civil.get('month', 1):02d}-{civil.get('day', 1):02d}")
+        latest_date = max(dates) if dates else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        today_pts = [
+            p for p in pts
+            if p.get('steps', {}).get('interval', {}).get('civilStartTime', {}).get('date', {})
+            and f"{p['steps']['interval']['civilStartTime']['date']['year']:04d}-{p['steps']['interval']['civilStartTime']['date']['month']:02d}-{p['steps']['interval']['civilStartTime']['date']['day']:02d}" == latest_date
+            and p.get('dataSource', {}).get('platform') == 'FITBIT'
+        ]
+        if not today_pts:
+            today_pts = [
+                p for p in pts
+                if p.get('steps', {}).get('interval', {}).get('civilStartTime', {}).get('date', {})
+                and f"{p['steps']['interval']['civilStartTime']['date']['year']:04d}-{p['steps']['interval']['civilStartTime']['date']['month']:02d}-{p['steps']['interval']['civilStartTime']['date']['day']:02d}" == latest_date
+            ]
+
+        if today_pts:
+            old_counts = [max(1, int(p.get('steps', {}).get('count', 0))) for p in today_pts]
+            total_old = sum(old_counts)
+            raw_allocated = [(c * target_steps) / total_old for c in old_counts]
+            floored = [int(x) for x in raw_allocated]
+            diff = target_steps - sum(floored)
+            remainders = sorted([(raw_allocated[i] - floored[i], i) for i in range(len(today_pts))], reverse=True)
+            for k in range(diff):
+                floored[remainders[k][1]] += 1
+            for i, p in enumerate(today_pts):
+                p['steps']['count'] = str(floored[i])
+
+        save_data(data_dict)
+
+        if request.user.is_authenticated:
+            sess, _ = WearableSession.objects.get_or_create(user=request.user)
+            sess.raw_data_json = json.dumps(data_dict)
+            sess.total_steps = target_steps
+            sess.save()
+
+        global _default_agent
+        _default_agent = None
+
+        return JsonResponse({
+            "success": True,
+            "message": f"Successfully calibrated today's steps to {target_steps:,}!",
+            "date": latest_date,
+            "calibrated_steps": target_steps,
+            "data": data_dict
+        }, status=200)
+    except Exception as e:
+        logger.error(f"Error in wearable_calibrate_steps_api: {e}", exc_info=True)
+        return JsonResponse({"error": str(e)}, status=500)

@@ -124,5 +124,8 @@ urlpatterns = [
     path('api/wearable/graph-stats/',
          views.wearable_graph_stats_api,
          name='wearable_graph_stats_api'),
+    path('api/wearable/calibrate/',
+         views.wearable_calibrate_steps_api,
+         name='wearable_calibrate_steps_api'),
 ]
 
