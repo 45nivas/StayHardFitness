@@ -14,7 +14,8 @@ from workouts.wearable.fetch_fitbit_data import (
     GoogleHealthAPIClient,
     save_data,
     TOKENS_FILE,
-    OUTPUT_FILE
+    OUTPUT_FILE,
+    CLIENT_SECRET_FILE
 )
 
 logger = logging.getLogger(__name__)
@@ -452,4 +453,46 @@ def wearable_calibrate_steps_api(request):
         }, status=200)
     except Exception as e:
         logger.error(f"Error in wearable_calibrate_steps_api: {e}", exc_info=True)
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def wearable_save_client_credentials_api(request):
+    """
+    Saves user-provided Google Cloud OAuth Client ID & Client Secret to client_secret.json.
+    Enables athletes to link their own Google Cloud Console projects seamlessly from the UI.
+    """
+    try:
+        body = json.loads(request.body.decode('utf-8')) if request.body else {}
+        client_id = body.get("client_id", "").strip()
+        client_secret = body.get("client_secret", "").strip()
+        redirect_uri = body.get("redirect_uri", "https://www.google.com").strip()
+
+        if not client_id:
+            return JsonResponse({"error": "Google Cloud Client ID is required."}, status=400)
+
+        payload = {
+            "web": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uris": [redirect_uri],
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token"
+            }
+        }
+        with open(CLIENT_SECRET_FILE, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+        oauth_mgr = OAuthManager()
+        auth_url = oauth_mgr.get_authorization_url(redirect_uri=redirect_uri)
+
+        return JsonResponse({
+            "success": True,
+            "message": "Google Cloud OAuth credentials saved successfully!",
+            "client_id": client_id,
+            "auth_url": auth_url
+        }, status=200)
+    except Exception as e:
+        logger.error(f"Error saving client credentials: {e}", exc_info=True)
         return JsonResponse({"error": str(e)}, status=500)

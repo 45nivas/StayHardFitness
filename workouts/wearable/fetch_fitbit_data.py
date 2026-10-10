@@ -8,6 +8,7 @@ import requests
 # Default File Paths
 TOKENS_FILE = os.path.join(os.path.dirname(__file__), "tokens.json")
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "fitbit_daily_data.json")
+CLIENT_SECRET_FILE = os.path.join(os.path.dirname(__file__), "client_secret.json")
 
 # OAuth & API Configs
 DEFAULT_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -42,9 +43,25 @@ class OAuthManager:
         if cid and csec:
             return cid, csec
 
-        # Search for any client_secret*.json file in project root
         current_dir = os.path.dirname(__file__)
-        candidates = [f for f in os.listdir(current_dir) if f.startswith("client_secret") and f.endswith(".json")]
+        primary_file = os.path.join(current_dir, "client_secret.json")
+        if os.path.exists(primary_file):
+            try:
+                with open(primary_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    installed = data.get("installed") or data.get("web") or {}
+                    redirect_uris = installed.get("redirect_uris", [])
+                    if redirect_uris and isinstance(redirect_uris, list):
+                        self.redirect_uri = redirect_uris[0]
+                    cid = installed.get("client_id", "")
+                    csec = installed.get("client_secret", "")
+                    if cid and csec:
+                        return cid, csec
+            except Exception as e:
+                print(f"[!] Warning reading client_secret.json: {e}")
+
+        # Search for any real client_secret*.json file (excluding .example.)
+        candidates = [f for f in os.listdir(current_dir) if f.startswith("client_secret") and f.endswith(".json") and ".example." not in f and f != "client_secret.json"]
         if candidates:
             target_path = os.path.join(current_dir, candidates[0])
             try:

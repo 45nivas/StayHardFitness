@@ -127,5 +127,8 @@ urlpatterns = [
     path('api/wearable/calibrate/',
          views.wearable_calibrate_steps_api,
          name='wearable_calibrate_steps_api'),
+    path('api/wearable/save-credentials/',
+         views.wearable_save_client_credentials_api,
+         name='wearable_save_client_credentials_api'),
 ]
 
