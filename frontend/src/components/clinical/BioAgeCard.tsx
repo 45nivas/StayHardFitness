@@ -8,24 +8,22 @@ interface BioAgeCardProps {
 export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
   const isRealData = bioAgeResults !== null;
 
-  // Safe default clinical fallback data
   const data: BioAgeResults = bioAgeResults || {
-    chronological_age: 30,
-    biological_age: 30,
-    longevity_score: 92,
-    pathway_focus: "General Metabolic Autophagy & Cellular Resiliency",
+    chronological_age: 32,
+    biological_age: 28.4,
+    longevity_score: 94,
+    pathway_focus: "AMPK Cellular Autophagy & Mitochondrial Biogenesis",
     longevity_tips: [
-      "Implement a 12-hour overnight circadian fast to encourage cellular autophagy and repair.",
-      "Pair carbohydrate intake with moderate dietary fiber and healthy fats to buffer insulin spikes.",
-      "Integrate regular brisk movement after main meals to enhance biological lipid clearance."
+      "Implement a 14-hour circadian fast to upregulate AMPK signaling and cellular repair.",
+      "Pair soluble fiber and polyphenols with high-protein meals to optimize ApoB & LDL clearance.",
+      "Maintain 150+ mins/week of Zone 2 aerobic base work alongside heavy resistance training."
     ]
   };
 
-  const ageDiff = data.chronological_age - data.biological_age;
+  const ageDiff = Number((data.chronological_age - data.biological_age).toFixed(1));
   const isYounger = ageDiff > 0;
   const isOlder = ageDiff < 0;
 
-  // SVG Gauge calculations
   const radius = 32;
   const stroke = 6;
   const normalizedRadius = radius - stroke * 2;
@@ -35,25 +33,20 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
   return (
     <div className="clinical-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: '230px', position: 'relative', overflow: 'hidden' }}>
       {!isRealData && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          zIndex: 10,
-        }}>
-          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             Sample Preview
           </span>
         </div>
       )}
 
       {/* Header section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '0.5px solid #dedad4', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
         <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1A1A18' }}>Biological Age & Longevity Index</h3>
-          <p style={{ fontSize: '0.75rem', color: '#6A6660' }}>Biomarker-derived aging velocity & metrics</p>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>Biological Age & Longevity Index</h3>
+          <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '2px 0 0 0', fontWeight: 500 }}>Biomarker-derived aging velocity & cellular resilience</p>
         </div>
-        <div style={{ backgroundColor: '#F4EFE6', color: '#A58452', padding: '6px', borderRadius: '50%' }}>
+        <div style={{ backgroundColor: '#FEF2F2', color: '#E50914', padding: '8px', borderRadius: '12px', border: '1px solid #FECACA' }}>
           <Sparkles size={16} />
         </div>
       </div>
@@ -62,7 +55,7 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        opacity: isRealData ? 1 : 0.4,
+        opacity: isRealData ? 1 : 0.45,
         pointerEvents: isRealData ? 'auto' : 'none',
         filter: isRealData ? 'none' : 'blur(0.5px)',
         transition: 'all 0.3s ease',
@@ -70,38 +63,34 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
       }}>
         {/* Main Stats Display */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'center', justifyContent: 'space-between' }}>
-          
-          {/* Left Column: Side-by-Side Age Comparisons */}
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            
-            <div style={{ textAlign: 'center', borderRight: '0.5px solid #dedad4', paddingRight: '16px' }}>
-              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6A6660', letterSpacing: '0.05em', fontWeight: 600 }}>Chronological</span>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.85rem', fontWeight: 700, color: '#6A6660' }}>
-                {data.chronological_age} <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>yrs</span>
+            <div style={{ textAlign: 'center', borderRight: '1px solid #E2E8F0', paddingRight: '16px' }}>
+              <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.06em', fontWeight: 800 }}>Chronological</span>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.8rem', fontWeight: 800, color: '#475569' }}>
+                {data.chronological_age} <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>yrs</span>
               </div>
             </div>
 
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#C8A97A', letterSpacing: '0.05em', fontWeight: 700 }}>Biological</span>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.85rem', fontWeight: 700, color: '#1A1A18' }}>
-                {data.biological_age} <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>yrs</span>
+              <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', color: '#E50914', letterSpacing: '0.06em', fontWeight: 800 }}>Biological</span>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.8rem', fontWeight: 900, color: '#0F172A' }}>
+                {data.biological_age} <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>yrs</span>
               </div>
             </div>
 
-            {/* Dynamic Difference Pill */}
             <div style={{ marginLeft: '4px' }}>
               {isYounger && (
-                <span className="stat-pill safety-green" style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px' }}>
+                <span className="stat-pill accent-gold" style={{ fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px' }}>
                   -{ageDiff} Yrs Younger
                 </span>
               )}
               {isOlder && (
-                <span className="stat-pill safety-red" style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px' }}>
+                <span className="stat-pill safety-red" style={{ fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px' }}>
                   +{Math.abs(ageDiff)} Yrs Older
                 </span>
               )}
               {ageDiff === 0 && (
-                <span className="stat-pill" style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 10px', backgroundColor: '#F4EFE6', borderColor: '#DEDAD4', color: '#6A6660' }}>
+                <span className="stat-pill" style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px' }}>
                   Neutral Pace
                 </span>
               )}
@@ -113,7 +102,7 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
             <div style={{ position: 'relative', width: '64px', height: '64px' }}>
               <svg width="64" height="64" style={{ transform: 'rotate(-90deg)' }}>
                 <circle
-                  stroke="#F4EFE6"
+                  stroke="#F1F5F9"
                   fill="transparent"
                   strokeWidth={stroke}
                   r={normalizedRadius}
@@ -121,7 +110,7 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
                   cy="32"
                 />
                 <circle
-                  stroke="#C8A97A"
+                  stroke="#E50914"
                   fill="transparent"
                   strokeWidth={stroke}
                   strokeDasharray={circumference + ' ' + circumference}
@@ -141,63 +130,65 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                color: '#1A1A18'
+                fontWeight: 800,
+                fontSize: '0.85rem',
+                color: '#0F172A',
+                fontFamily: 'var(--font-mono)'
               }}>
                 {data.longevity_score}%
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.7rem', color: '#6A6660', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Longevity Score</span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#4D7C5D' }}>Excellent Profile</span>
+              <span style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800 }}>Longevity Index</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A' }}>Optimal Resilience</span>
             </div>
           </div>
-
         </div>
 
         {/* Pathway Focus */}
         <div style={{
-          backgroundColor: '#F7F5F0',
-          border: '0.5px solid #dedad4',
-          borderRadius: '8px',
+          backgroundColor: '#F8FAFC',
+          border: '1px solid #E2E8F0',
+          borderLeft: '3px solid #E50914',
+          borderRadius: '10px',
           padding: '10px 14px',
           display: 'flex',
           alignItems: 'flex-start',
           gap: '10px'
         }}>
-          <div style={{ color: '#C8A97A', marginTop: '2px' }}>
+          <div style={{ color: '#E50914', marginTop: '2px' }}>
             <Heart size={14} />
           </div>
           <div>
-            <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#6A6660', letterSpacing: '0.05em', fontWeight: 600, display: 'block' }}>Primary Cellular Pathway Focus</span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1A1A18' }}>{data.pathway_focus}</span>
+            <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', color: '#64748B', letterSpacing: '0.05em', fontWeight: 800, display: 'block' }}>Primary Cellular Pathway Focus</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>{data.pathway_focus}</span>
           </div>
         </div>
 
         {/* Life Extension Hacks List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6A6660', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Shield size={12} className="text-[#C8A97A]" style={{ color: '#C8A97A' }} />
-            Life-Extension Protocol Hacks:
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Shield size={13} style={{ color: '#E50914' }} />
+            Longevity Protocol Directives:
           </span>
-          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '4px', listStyleType: 'none' }}>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '4px', listStyleType: 'none', margin: 0 }}>
             {data.longevity_tips.map((tip, idx) => (
               <li key={idx} style={{
                 fontSize: '0.78rem',
-                color: '#6A6660',
-                lineHeight: '1.4',
+                color: '#475569',
+                fontWeight: 500,
+                lineHeight: '1.45',
                 paddingLeft: '14px',
                 position: 'relative'
               }}>
                 <span style={{
                   position: 'absolute',
                   left: '0',
-                  top: '6px',
-                  width: '4px',
-                  height: '4px',
+                  top: '7px',
+                  width: '5px',
+                  height: '5px',
                   borderRadius: '50%',
-                  backgroundColor: '#C8A97A'
+                  backgroundColor: '#E50914'
                 }}></span>
                 {tip}
               </li>
@@ -220,21 +211,21 @@ export function BioAgeCard({ bioAgeResults }: BioAgeCardProps) {
           zIndex: 5,
         }}>
           <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            border: '1px solid var(--brand-gold)',
-            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            border: '1px solid #FECACA',
+            borderRadius: '14px',
             padding: '16px 24px',
             textAlign: 'center',
-            boxShadow: '0 4px 12px rgba(26, 26, 24, 0.08)',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
             maxWidth: '280px',
           }}>
-            <Upload size={20} style={{ color: 'var(--brand-gold-dark)' }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Upload a health report to see your real biological age & longevity score
+            <Upload size={20} style={{ color: '#E50914' }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
+              Upload a report or click "Load Sample Blood Panel" to unlock biological age metrics
             </span>
           </div>
         </div>

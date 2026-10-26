@@ -277,7 +277,7 @@ export default function CarbCycling() {
 
                 {/* Low Carb Card */}
                 <div className="bg-dark-card border border-dark-border p-6 rounded-3xl shadow-md relative overflow-hidden flex flex-col justify-between min-h-[200px]">
-                  <div className="absolute top-4 right-4 bg-yellow-500/10 text-yellow-600 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
+                  <div className="absolute top-4 right-4 bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest">
                     Rest Day
                   </div>
 

@@ -9,13 +9,13 @@ const API_BASE_URL = 'http://localhost:8000';
 axios.defaults.withCredentials = true;
 
 const MUSCLE_COLORS = {
-  Chest: 'bg-red-50 text-red-600 border border-red-150',
-  Back: 'bg-blue-50 text-blue-600 border border-blue-150',
-  Legs: 'bg-green-50 text-green-600 border border-green-150',
-  Shoulders: 'bg-purple-50 text-purple-600 border border-purple-150',
-  Biceps: 'bg-orange-50 text-orange-600 border border-orange-150',
-  Triceps: 'bg-pink-50 text-pink-600 border border-pink-150',
-  General: 'bg-slate-50 text-slate-600 border border-slate-150',
+  Chest: 'bg-red-50 text-brand-red border border-red-200',
+  Back: 'bg-slate-100 text-slate-800 border border-slate-200',
+  Legs: 'bg-red-50 text-brand-red border border-red-200',
+  Shoulders: 'bg-slate-100 text-slate-800 border border-slate-200',
+  Biceps: 'bg-red-50 text-brand-red border border-red-200',
+  Triceps: 'bg-slate-100 text-slate-800 border border-slate-200',
+  General: 'bg-slate-50 text-slate-700 border border-slate-200',
 };
 
 export default function Analytics() {
@@ -92,13 +92,13 @@ export default function Analytics() {
             datasets: [{
               label: 'Bodyweight (kg)',
               data: withWeight.map(c => c.bodyweight_kg),
-              borderColor: '#34d399',
-              backgroundColor: 'rgba(52, 211, 153, 0.08)',
+              borderColor: '#e50914',
+              backgroundColor: 'rgba(229, 9, 20, 0.08)',
               borderWidth: 2.5,
               tension: 0.35,
               fill: true,
               pointRadius: 5,
-              pointBackgroundColor: '#34d399',
+              pointBackgroundColor: '#e50914',
             }]
           },
           options: {
@@ -213,8 +213,8 @@ export default function Analytics() {
       valFormatter = (v) => `${v} kg`;
     }
 
-    const pointBackgroundColor = history.map(h => h.is_pr ? '#f59e0b' : '#a78bfa');
-    const pointBorderColor = history.map(h => h.is_pr ? '#f59e0b' : '#a78bfa');
+    const pointBackgroundColor = history.map(h => h.is_pr ? '#e50914' : '#0f172a');
+    const pointBorderColor = history.map(h => h.is_pr ? '#e50914' : '#0f172a');
     const pointRadius = history.map(h => h.is_pr ? 8 : 4);
     const pointHoverRadius = history.map(h => h.is_pr ? 10 : 6);
 
@@ -225,8 +225,8 @@ export default function Analytics() {
         datasets: [{
           label: labelText,
           data: chartData,
-          borderColor: '#a78bfa',
-          backgroundColor: 'rgba(167, 139, 250, 0.08)',
+          borderColor: '#e50914',
+          backgroundColor: 'rgba(229, 9, 20, 0.08)',
           borderWidth: 2.5,
           tension: 0.35,
           fill: true,
@@ -245,7 +245,7 @@ export default function Analytics() {
             backgroundColor: '#ffffff',
             titleColor: '#0f172a',
             bodyColor: '#334155',
-            borderColor: '#a78bfa',
+            borderColor: '#e50914',
             borderWidth: 1,
             padding: 10,
             displayColors: false,
@@ -359,13 +359,13 @@ export default function Analytics() {
 
       {/* SECTION 1: Header Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex items-center justify-between">
           <div>
             <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold block mb-1">Consistency Streak</span>
-            <p className="text-3xl font-black text-slate-900 leading-none">{data.streak} Days</p>
+            <p className="text-3xl font-black text-slate-900 leading-none font-mono">{data.streak} Days</p>
           </div>
-          <div className="bg-orange-50 p-3 rounded-2xl">
-            <Flame className="w-6 h-6 text-orange-500" />
+          <div className="bg-red-50 p-3 rounded-2xl">
+            <Flame className="w-6 h-6 text-brand-red" />
           </div>
         </div>
 
@@ -426,7 +426,7 @@ export default function Analytics() {
                           {log.weight ? `${log.weight}kg × ${log.reps}` : `${log.reps} reps`}
                         </span>
                         {log.is_pr && (
-                          <span className="bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                          <span className="bg-red-50 text-brand-red border border-red-200 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
                             🏆 New PR!
                           </span>
                         )}
@@ -435,9 +435,9 @@ export default function Analytics() {
                     <td className="px-6 py-4">
                       <button 
                         onClick={() => openVideoModal(log.exercise_name)}
-                        className="text-xs font-bold text-purple-500 border border-purple-200 rounded-full px-3 py-1 hover:bg-purple-50 flex items-center space-x-1 cursor-pointer transition-colors"
+                        className="text-xs font-extrabold text-brand-red border border-red-200 bg-red-50/50 rounded-full px-3 py-1 hover:bg-brand-red hover:text-white flex items-center space-x-1 cursor-pointer transition-colors"
                       >
-                        <Play className="w-3 h-3 fill-purple-500" />
+                        <Play className="w-3 h-3 fill-current" />
                         <span>Form</span>
                       </button>
                     </td>

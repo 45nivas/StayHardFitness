@@ -45,9 +45,12 @@ function App() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-dark-bg text-white flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-400 text-sm font-semibold">Synchronizing with Stay Hard server...</p>
+      <div className="min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center space-y-4 ai-grid-bg">
+        <div className="relative flex items-center justify-center">
+          <div className="w-14 h-14 border-4 border-slate-200 border-t-brand-red rounded-full animate-spin"></div>
+          <div className="w-3 h-3 bg-brand-red rounded-full absolute animate-ping"></div>
+        </div>
+        <p className="text-slate-600 text-xs font-extrabold uppercase tracking-widest">Synchronizing Stay Hard AI OS...</p>
       </div>
     );
   }

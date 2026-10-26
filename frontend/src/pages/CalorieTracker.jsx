@@ -259,7 +259,7 @@ export default function CalorieTracker() {
                   initial={{ width: 0 }}
                   animate={{ width: `${calculatePct(summary.total_carbs, summary.target_carbs)}%` }}
                   transition={{ duration: 0.5 }}
-                  className="bg-yellow-500 h-full rounded-full"
+                  className="bg-slate-900 h-full rounded-full"
                 />
               </div>
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest block">
@@ -278,7 +278,7 @@ export default function CalorieTracker() {
                   initial={{ width: 0 }}
                   animate={{ width: `${calculatePct(summary.total_fat, summary.target_fat)}%` }}
                   transition={{ duration: 0.5 }}
-                  className="bg-orange-500 h-full rounded-full"
+                  className="bg-slate-500 h-full rounded-full"
                 />
               </div>
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest block">

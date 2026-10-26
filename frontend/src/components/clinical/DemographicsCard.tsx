@@ -17,19 +17,17 @@ export const DemographicsCard: React.FC<DemographicsCardProps> = ({
   correctionsCount,
   auditHasRun,
 }) => {
-  // Safe defaults
   const age = demographics?.age ?? 30;
   const weight = demographics?.weight_kg ?? 70;
   const height = demographics?.height_cm ?? 170;
   const gender = demographics?.gender ?? 'Male';
 
-  // Calculate BMI dynamically
   const heightInMeters = height / 100;
   const bmi = heightInMeters > 0 ? (weight / (heightInMeters * heightInMeters)).toFixed(1) : '24.2';
   const bmiVal = parseFloat(bmi);
 
   let bmiClass = 'Normal';
-  let bmiColorClass = 'accent-gold';
+  let bmiColorClass = 'safety-green';
   if (bmiVal < 18.5) {
     bmiClass = 'Underweight';
     bmiColorClass = 'safety-red';
@@ -44,7 +42,6 @@ export const DemographicsCard: React.FC<DemographicsCardProps> = ({
     bmiColorClass = 'safety-red';
   }
 
-  // Active caloric target
   const caloricTarget = targets?.calories ?? 2000;
 
   return (
@@ -54,58 +51,55 @@ export const DemographicsCard: React.FC<DemographicsCardProps> = ({
         <div style={{
           width: '52px',
           height: '52px',
-          borderRadius: '50%',
-          backgroundColor: '#F4EFE6',
-          border: '1px solid #C8A97A',
+          borderRadius: '14px',
+          backgroundColor: '#FEF2F2',
+          border: '1px solid #FECACA',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#A58452'
+          color: '#E50914'
         }}>
           <User size={24} />
         </div>
         <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1A1A18', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             {demographics?.name && demographics.name.trim().length > 0 
-              ? `${demographics.name}'s Clinical Profile` 
-              : 'Guest Clinical Profile'}
+              ? `${demographics.name} // Clinical Profile` 
+              : 'Athlete Clinical Profile'}
           </h2>
-          <p style={{ fontSize: '0.85rem', color: '#6A6660', display: 'flex', gap: '8px' }}>
-            <span>Age: <strong>{age}</strong></span> • 
-            <span>Weight: <strong>{weight} kg</strong></span> • 
-            <span>Height: <strong>{height} cm</strong></span> • 
-            <span>Gender: <strong>{gender}</strong></span>
+          <p style={{ fontSize: '0.82rem', color: '#475569', display: 'flex', gap: '8px', marginTop: '4px', marginBottom: 0 }}>
+            <span>Age: <strong style={{ color: '#0F172A' }}>{age}</strong></span> • 
+            <span>Mass: <strong style={{ color: '#0F172A' }}>{weight} kg</strong></span> • 
+            <span>Height: <strong style={{ color: '#0F172A' }}>{height} cm</strong></span> • 
+            <span>Sex: <strong style={{ color: '#0F172A' }}>{gender}</strong></span>
           </p>
         </div>
       </div>
 
       {/* Demographic Indicators & Safety Badges */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-        {/* BMI pill */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
         <div className={`stat-pill ${bmiColorClass}`}>
           <Activity size={14} />
           <span>BMI: <strong>{bmi}</strong> ({bmiClass})</span>
         </div>
 
-        {/* Caloric target pill */}
         <div className="stat-pill accent-gold">
           <Flame size={14} />
           <span>Calorie Plan: <strong>{caloricTarget} kcal</strong></span>
         </div>
 
-        {/* Safety Audit status pill — three states: pending, cleared, corrected */}
         {!auditHasRun ? (
           <div className="stat-pill">
             <Shield size={14} />
-            <span>Safety Audit: <strong>Pending</strong></span>
+            <span>Safety Audit: <strong>Ready</strong></span>
           </div>
         ) : safetyCleared ? (
           <div className="stat-pill safety-green">
             <ShieldCheck size={14} />
-            <span>Safety Audit: <strong>No Violations Detected</strong></span>
+            <span>Safety Audit: <strong>Cleared</strong></span>
           </div>
         ) : (
-          <div className="stat-pill accent-gold">
+          <div className="stat-pill safety-red">
             <ShieldAlert size={14} />
             <span>Safety Audit: <strong>{correctionsCount} {correctionsCount === 1 ? 'Flag' : 'Flags'} Corrected</strong></span>
           </div>

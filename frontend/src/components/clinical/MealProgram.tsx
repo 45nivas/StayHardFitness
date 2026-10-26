@@ -14,11 +14,8 @@ export const MealProgram: React.FC<MealProgramProps> = ({
   toggleMealChecked,
 }) => {
   const isRealData = mealPlan !== null;
-
-  // Accordion open states
   const [openMeal, setOpenMeal] = useState<string | null>('breakfast');
 
-  // Safe default clinical baseline menu if none loaded yet
   const defaultMeals: MealPlan = {
     breakfast: {
       name: "Egg White & Avocado Spinach Toast",
@@ -68,31 +65,26 @@ export const MealProgram: React.FC<MealProgramProps> = ({
   return (
     <div className="clinical-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', overflow: 'hidden' }}>
       {!isRealData && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          zIndex: 10,
-        }}>
-          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             Sample Preview
           </span>
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid #dedad4', paddingBottom: '10px' }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1A1A18', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Calendar size={18} style={{ color: '#C8A97A' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
+        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+          <Calendar size={18} style={{ color: '#E50914' }} />
           Tailored Meal Program
         </h3>
-        <span style={{ fontSize: '0.75rem', color: '#9E9990', fontWeight: 500 }}>Select meals consumed to update Macro Rings</span>
+        <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700 }}>Check meals to update Macro Rings</span>
       </div>
 
       <div style={{
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
-        opacity: isRealData ? 1 : 0.4,
+        opacity: isRealData ? 1 : 0.45,
         pointerEvents: isRealData ? 'auto' : 'none',
         filter: isRealData ? 'none' : 'blur(0.5px)',
         transition: 'all 0.3s ease'
@@ -109,38 +101,34 @@ export const MealProgram: React.FC<MealProgramProps> = ({
             <div
               key={key}
               style={{
-                border: '0.5px solid #dedad4',
-                borderRadius: '8px',
+                border: isChecked ? '1px solid #E50914' : '1px solid #E2E8F0',
+                borderRadius: '12px',
                 overflow: 'hidden',
-                backgroundColor: isChecked ? '#FDFDFD' : '#FFFFFF',
-                borderColor: isChecked ? '#C8A97A' : '#dedad4',
-                boxShadow: isChecked ? '0 2px 8px rgba(200, 169, 122, 0.04)' : 'none',
+                backgroundColor: isChecked ? '#FEF2F2' : '#FFFFFF',
                 transition: 'all 0.2s ease',
               }}
             >
-              {/* Header Row: Checkbox, Type, Title, Macros, Accordion toggle */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '16px',
+                  padding: '14px 16px',
                   cursor: 'pointer',
                   userSelect: 'none',
                 }}
                 onClick={() => toggleAccordion(key)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: '0' }}>
-                  {/* Interactive Checkbox */}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Avoid triggering accordion open
+                      e.stopPropagation();
                       toggleMealChecked(key);
                     }}
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      color: isChecked ? '#C8A97A' : '#9E9990',
+                      color: isChecked ? '#E50914' : '#94A3B8',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -150,28 +138,26 @@ export const MealProgram: React.FC<MealProgramProps> = ({
                     {isChecked ? <CheckSquare size={20} /> : <Square size={20} />}
                   </button>
 
-                  {/* Meal Tag */}
                   <span style={{
                     fontSize: '0.65rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
-                    backgroundColor: isChecked ? '#F4EFE6' : '#F7F5F0',
-                    color: isChecked ? '#A58452' : '#6A6660',
+                    backgroundColor: isChecked ? '#E50914' : '#F8FAFC',
+                    color: isChecked ? '#FFFFFF' : '#475569',
                     padding: '2px 8px',
-                    borderRadius: '4px',
-                    border: '0.5px solid #dedad4'
+                    borderRadius: '6px',
+                    border: isChecked ? '1px solid #E50914' : '1px solid #E2E8F0'
                   }}>
                     {labelUpper}
                   </span>
 
-                  {/* Meal Name */}
                   <span style={{
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    color: isChecked ? '#1A1A18' : '#1A1A18',
+                    fontWeight: 800,
+                    fontSize: '0.9rem',
+                    color: '#0F172A',
                     textDecoration: isChecked ? 'line-through' : 'none',
-                    opacity: isChecked ? 0.7 : 1,
+                    opacity: isChecked ? 0.75 : 1,
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -180,52 +166,48 @@ export const MealProgram: React.FC<MealProgramProps> = ({
                   </span>
                 </div>
 
-                {/* Macro metrics summary */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginLeft: '12px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1A1A18' }}>
-                    {meal.calories} <span style={{ fontSize: '0.7rem', color: '#9E9990', fontWeight: 400 }}>kcal</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '12px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-mono)' }}>
+                    {meal.calories} <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>kcal</span>
                   </span>
-                  <span className="meal-macros-text">
-                    P: <strong>{meal.protein}g</strong> • C: <strong>{meal.carbs}g</strong> • F: <strong>{meal.fats}g</strong>
+                  <span style={{ fontSize: '0.75rem', color: '#475569', fontFamily: 'var(--font-mono)' }}>
+                    P:<strong style={{ color: '#0F172A' }}>{meal.protein}g</strong> • C:<strong style={{ color: '#0F172A' }}>{meal.carbs}g</strong> • F:<strong style={{ color: '#0F172A' }}>{meal.fats}g</strong>
                   </span>
-                  <button style={{ background: 'transparent', border: 'none', color: '#9E9990', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                  <button style={{ background: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                     {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </button>
                 </div>
               </div>
 
-              {/* Sliding Accordion Drawer */}
               {isOpen && (
                 <div style={{
                   padding: '16px',
-                  backgroundColor: '#F7F5F0',
-                  borderTop: '0.5px solid #dedad4',
-                  fontSize: '0.85rem',
+                  backgroundColor: '#F8FAFC',
+                  borderTop: '1px solid #E2E8F0',
+                  fontSize: '0.82rem',
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
                   gap: '20px',
                 }}
                 className="grid-cols-1 md:grid-cols-2"
                 >
-                  {/* Left Column: Ingredients */}
                   <div>
-                    <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6A6660', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#E50914', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', marginTop: 0 }}>
                       Ingredients Required:
                     </h4>
-                    <ul style={{ paddingLeft: '16px', color: '#1A1A18', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <ul style={{ paddingLeft: '16px', color: '#0F172A', display: 'flex', flexDirection: 'column', gap: '4px', margin: 0, fontWeight: 600 }}>
                       {meal.ingredients.map((ing, idx) => (
-                        <li key={idx} style={{ color: '#1A1A18' }}>{ing}</li>
+                        <li key={idx}>{ing}</li>
                       ))}
                     </ul>
                   </div>
 
-                  {/* Right Column: Instructions */}
                   <div>
-                    <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6A6660', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Compass size={12} />
+                    <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', marginTop: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Compass size={12} style={{ color: '#E50914' }} />
                       Preparation Guidelines:
                     </h4>
-                    <p style={{ color: '#6A6660', lineHeight: '1.45' }}>
+                    <p style={{ color: '#475569', lineHeight: '1.5', margin: 0, fontWeight: 500 }}>
                       {meal.instructions}
                     </p>
                   </div>
@@ -250,21 +232,21 @@ export const MealProgram: React.FC<MealProgramProps> = ({
           zIndex: 5,
         }}>
           <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            border: '1px solid var(--brand-gold)',
-            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            border: '1px solid #FECACA',
+            borderRadius: '14px',
             padding: '16px 24px',
             textAlign: 'center',
-            boxShadow: '0 4px 12px rgba(26, 26, 24, 0.08)',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
             maxWidth: '280px',
           }}>
-            <Upload size={20} style={{ color: 'var(--brand-gold-dark)' }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Upload a health report to get your personalized meal plan
+            <Upload size={20} style={{ color: '#E50914' }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
+              Upload a report or load sample panel to unlock your personalized meal plan
             </span>
           </div>
         </div>

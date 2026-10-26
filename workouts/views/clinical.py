@@ -115,18 +115,77 @@ def _async_background_embedding(chunks, filename):
         logger.error(f"❌ Error in async embedding for {filename}: {e}")
 
 
+@csrf_exempt
 def clinical_health(request):
-    """GET /api/clinical/health/ — Clinical Agent status, vector DB info, active profile"""
+    """GET/POST /api/clinical/health/ — Clinical Agent status, vector DB info, active profile & session sync"""
     try:
         clinical_sess = _get_or_create_session(request)
+
+        if request.method == 'POST':
+            try:
+                body = json.loads(request.body.decode('utf-8')) if request.body else {}
+                if 'profile' in body:
+                    clinical_sess.profile_json = json.dumps(body['profile'])
+                if 'meal_plan' in body:
+                    clinical_sess.meal_plan_json = json.dumps(body['meal_plan'])
+                if 'training_plan' in body:
+                    clinical_sess.training_plan_json = json.dumps(body['training_plan'])
+                if 'bio_age_results' in body:
+                    clinical_sess.bio_age_json = json.dumps(body['bio_age_results'])
+                if 'critique' in body:
+                    clinical_sess.critique_json = json.dumps(body['critique'])
+                if 'audit_report' in body:
+                    clinical_sess.audit_report = body['audit_report']
+                if 'corrections' in body:
+                    clinical_sess.corrections_json = json.dumps(body['corrections'])
+                clinical_sess.save()
+            except Exception as post_err:
+                logger.warning(f"Error saving clinical session via POST: {post_err}")
+
         has_profile = False
         profile = None
+        meal_plan = None
+        training_plan = None
+        bio_age_results = None
+        critique = None
+        audit_report = None
+        corrections = []
+
         if clinical_sess and clinical_sess.profile_json:
             try:
                 profile = json.loads(clinical_sess.profile_json)
                 has_profile = True
             except Exception:
                 pass
+        if clinical_sess and clinical_sess.meal_plan_json:
+            try:
+                meal_plan = json.loads(clinical_sess.meal_plan_json)
+            except Exception:
+                pass
+        if clinical_sess and clinical_sess.training_plan_json:
+            try:
+                training_plan = json.loads(clinical_sess.training_plan_json)
+            except Exception:
+                pass
+        if clinical_sess and clinical_sess.bio_age_json:
+            try:
+                bio_age_results = json.loads(clinical_sess.bio_age_json)
+            except Exception:
+                pass
+        if clinical_sess and clinical_sess.critique_json:
+            try:
+                critique = json.loads(clinical_sess.critique_json)
+            except Exception:
+                pass
+        if clinical_sess and clinical_sess.audit_report:
+            audit_report = clinical_sess.audit_report
+        if clinical_sess and clinical_sess.corrections_json:
+            try:
+                corrections = json.loads(clinical_sess.corrections_json)
+            except Exception:
+                pass
+
+        model_name = _rag_instance.embedding_store.model_name if _rag_instance else os.getenv('CHROMA_EMBEDDING_MODEL', 'pritamdeka/S-PubMedBert-MS-MARCO')
 
         return JsonResponse({
             'status': 'healthy',
@@ -141,15 +200,22 @@ def clinical_health(request):
                 'clinical_critique': 'active',
                 'coordinator': 'active'
             },
-            'vector_db': f"ChromaDB + Cosine HNSW (Model: {get_rag().embedding_store.model_name})",
+            'vector_db': f"ChromaDB + Cosine HNSW (Model: {model_name})",
             'has_profile': has_profile,
-            'profile': profile
+            'profile': profile,
+            'meal_plan': meal_plan,
+            'training_plan': training_plan,
+            'bio_age_results': bio_age_results,
+            'critique': critique,
+            'audit_report': audit_report,
+            'corrections': corrections
         })
     except Exception as e:
         logger.error(f"Clinical health check error: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
+@csrf_exempt
 def clinical_upload(request):
     """POST /api/clinical/upload/ — Upload health reports, extract biomarkers & index chunks"""
     if request.method != 'POST':
@@ -243,6 +309,7 @@ def clinical_upload(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+@csrf_exempt
 def clinical_chat(request):
     """POST /api/clinical/chat/ — Run Plan-Reason-Audit multi-agent query loop"""
     if request.method != 'POST':
@@ -349,6 +416,7 @@ def clinical_download_report(request):
         return JsonResponse({'error': f'Failed to generate report: {str(e)}'}, status=500)
 
 
+@csrf_exempt
 def clinical_clear(request):
     """POST /api/clinical/clear/ — Reset clinical session data and vector store"""
     if request.method != 'POST':

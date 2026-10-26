@@ -36,17 +36,17 @@ class ClinicalReportGenerator:
         
         styles = getSampleStyleSheet()
         
-        # Custom Color Palette
-        PRIMARY_COLOR = colors.HexColor("#1A365D")   # Deep Slate Blue
-        SECONDARY_COLOR = colors.HexColor("#D97706") # Gold / Amber
-        TEXT_DARK = colors.HexColor("#1F2937")       # Charcoal
-        TEXT_MUTED = colors.HexColor("#4B5563")      # Medium Grey
-        BG_LIGHT = colors.HexColor("#F9FAFB")        # Off-white / light grey
-        BORDER_COLOR = colors.HexColor("#E5E7EB")    # Cool grey border
-        SUCCESS_BG = colors.HexColor("#D1FAE5")      # Light green
-        SUCCESS_TEXT = colors.HexColor("#065F46")    # Deep emerald
-        WARNING_BG = colors.HexColor("#FEF3C7")      # Light amber
-        WARNING_TEXT = colors.HexColor("#92400E")    # Deep brown/amber
+        # Custom Color Palette (STAY HARD AI — Slate & Crimson)
+        PRIMARY_COLOR = colors.HexColor("#0F172A")   # Deep Carbon Slate
+        SECONDARY_COLOR = colors.HexColor("#E50914") # Crimson Red
+        TEXT_DARK = colors.HexColor("#0F172A")       # Carbon Slate
+        TEXT_MUTED = colors.HexColor("#475569")      # Muted Slate
+        BG_LIGHT = colors.HexColor("#F8FAFC")        # Cool Alabaster
+        BORDER_COLOR = colors.HexColor("#E2E8F0")    # Cool Slate Border
+        SUCCESS_BG = colors.HexColor("#F1F5F9")      # Crisp Slate Surface
+        SUCCESS_TEXT = colors.HexColor("#0F172A")    # Deep Slate
+        WARNING_BG = colors.HexColor("#FEF2F2")      # Light Crimson Tint
+        WARNING_TEXT = colors.HexColor("#E50914")    # Crimson Red
         
         # Modify existing styles safely to avoid duplicate name crashes
         title_style = ParagraphStyle(
@@ -122,7 +122,7 @@ class ClinicalReportGenerator:
         story = []
         
         # --- HEADER SECTION ---
-        story.append(Paragraph("NUTRIMIND AI", title_style))
+        story.append(Paragraph("STAY HARD // CLINICAL AI", title_style))
         story.append(Spacer(1, 4))
         story.append(Paragraph("Clinical Biomarker Optimization & Longevity Protocol", subtitle_style))
         story.append(Spacer(1, 10))
@@ -130,7 +130,7 @@ class ClinicalReportGenerator:
         # Divider Line
         divider = Table([[""]], colWidths=[504])
         divider.setStyle(TableStyle([
-            ('LINEBELOW', (0,0), (-1,-1), 1.5, PRIMARY_COLOR),
+            ('LINEBELOW', (0,0), (-1,-1), 1.5, SECONDARY_COLOR),
             ('BOTTOMPADDING', (0,0), (-1,-1), 0),
             ('TOPPADDING', (0,0), (-1,-1), 0)
         ]))
@@ -138,16 +138,16 @@ class ClinicalReportGenerator:
         story.append(Spacer(1, 15))
         
         # --- PATIENT PROFILE BLOCK ---
-        demographics = profile.get("demographics", {})
-        age = demographics.get("age", "N/A")
-        weight = f"{demographics.get('weight_kg', 'N/A')} kg"
-        height = f"{demographics.get('height_cm', 'N/A')} cm"
-        gender = demographics.get("gender", "N/A")
+        demographics = profile.get("demographics", {}) if isinstance(profile, dict) else {}
+        age = demographics.get("age", 30)
+        weight = f"{demographics.get('weight_kg', demographics.get('weight', 'N/A'))} kg" if 'kg' not in str(demographics.get('weight', '')) else str(demographics.get('weight'))
+        height = f"{demographics.get('height_cm', demographics.get('height', 'N/A'))} cm" if 'cm' not in str(demographics.get('height', '')) else str(demographics.get('height'))
+        gender = demographics.get("gender", demographics.get("sex", "N/A"))
         activity = demographics.get("activity_level", "Moderate")
         
         profile_data = [
             [
-                Paragraph("<b>Patient Name:</b> Guest Patient", body_style),
+                Paragraph("<b>Patient Name:</b> Athlete Dossier", body_style),
                 Paragraph(f"<b>Chronological Age:</b> {age} years", body_style),
             ],
             [
@@ -175,7 +175,17 @@ class ClinicalReportGenerator:
         story.append(Spacer(1, 15))
         
         # --- BIOMARKERS TABLE SECTION ---
-        biomarkers = profile.get("biomarkers", [])
+        raw_biomarkers = profile.get("biomarkers", [])
+        if isinstance(raw_biomarkers, dict):
+            biomarkers = [
+                {"name": k, **(v if isinstance(v, dict) else {"value": v})}
+                for k, v in raw_biomarkers.items()
+            ]
+        elif isinstance(raw_biomarkers, list):
+            biomarkers = raw_biomarkers
+        else:
+            biomarkers = []
+
         if biomarkers:
             story.append(Paragraph("Physiological Biomarkers Ledger", h1_style))
             biomarker_rows = [[
@@ -187,16 +197,18 @@ class ClinicalReportGenerator:
             ]]
             
             for b in biomarkers:
-                name = b.get("name", "N/A")
-                val = f"{b.get('value', 'N/A')} {b.get('unit', '')}"
-                status = b.get("status", "Normal")
-                normal_range = b.get("normal_range", "N/A")
-                significance = b.get("clinical_significance", "")
+                if not isinstance(b, dict):
+                    continue
+                name = str(b.get("name", "N/A"))
+                val = f"{b.get('value', 'N/A')} {b.get('unit', '')}".strip()
+                status = str(b.get("status", "Normal"))
+                normal_range = str(b.get("normal_range", b.get("ref_range", "N/A")))
+                significance = str(b.get("clinical_significance", ""))
                 
                 # Format status badge colors
                 status_color = TEXT_DARK
                 if status.lower() in ["elevated", "high", "low", "deficient"]:
-                    status_color = colors.HexColor("#B45309") # amber/gold warning color
+                    status_color = SECONDARY_COLOR
                     
                 biomarker_rows.append([
                     Paragraph(name, body_style),
@@ -221,16 +233,22 @@ class ClinicalReportGenerator:
             story.append(Spacer(1, 15))
             
         # --- BIOLOGICAL AGE & LONGEVITY SECTION ---
-        if bio_age_results:
+        if isinstance(bio_age_results, dict) and bio_age_results:
             story.append(Paragraph("Biological Age & Cellular Longevity Ledger", h1_style))
-            c_age = bio_age_results.get("chronological_age", age)
-            b_age = bio_age_results.get("biological_age", c_age)
+            try:
+                c_age = float(bio_age_results.get("chronological_age") or age or 30)
+            except (ValueError, TypeError):
+                c_age = 30.0
+            try:
+                b_age = float(bio_age_results.get("biological_age") or bio_age_results.get("pheno_age") or c_age)
+            except (ValueError, TypeError):
+                b_age = c_age
             l_score = f"{bio_age_results.get('longevity_score', 90)}%"
-            focus = bio_age_results.get("pathway_focus", "General Cellular Resiliency")
+            focus = str(bio_age_results.get("pathway_focus", "General Cellular Resiliency"))
             tips = bio_age_results.get("longevity_tips", [])
             
             # Age comparison table
-            offset = int(b_age) - int(c_age)
+            offset = round(b_age - c_age, 1)
             offset_text = ""
             if offset < 0:
                 offset_text = f"<font color='{SUCCESS_TEXT.hexval()}'><b>{abs(offset)} years younger</b></font> (Optimal pace)"
@@ -438,9 +456,11 @@ class ClinicalReportGenerator:
             
         # Clinical critique peer-review
         if critique:
-            grade = critique.get("clinical_grade", "A")
-            explain = critique.get("mechanics_explanation", "")
-            notes = critique.get("peer_review_notes", "")
+            if isinstance(critique, str):
+                critique = {"clinical_grade": "A", "mechanics_explanation": critique, "peer_review_notes": "Approved by clinical board."}
+            grade = str(critique.get("clinical_grade", "A"))
+            explain = str(critique.get("mechanics_explanation", ""))
+            notes = str(critique.get("peer_review_notes", ""))
             supps = critique.get("advanced_optimizations", [])
             citations = critique.get("scientific_citations", [])
             

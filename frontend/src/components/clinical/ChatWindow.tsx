@@ -9,7 +9,7 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
-  messages,
+  messages = [],
   onSendMessage,
   isSending,
 }) => {
@@ -17,7 +17,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [expandedTraceIdx, setExpandedTraceIdx] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isSending]);
@@ -34,49 +33,38 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#F7F5F0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#F8FAFC', borderRadius: '14px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
       
       {/* Chat Messages Panel */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {messages.length === 0 ? (
-          /* Empty Chat state */
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
-            color: '#9E9990',
+            color: '#64748B',
             textAlign: 'center',
             gap: '12px',
-            maxWidth: '400px',
+            maxWidth: '420px',
             margin: 'auto'
           }}>
-            <div style={{ backgroundColor: '#F4EFE6', padding: '14px', borderRadius: '50%', color: '#C8A97A' }}>
+            <div style={{ backgroundColor: '#FEF2F2', padding: '16px', borderRadius: '18px', color: '#E50914', border: '1px solid #FECACA' }}>
               <MessageSquare size={32} />
             </div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#1A1A18', fontFamily: 'Lora, serif' }}>
-              NutriMind Clinical Assistant
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+              Stay Hard Clinical AI Assistant
             </h3>
-            <p style={{ fontSize: '0.85rem', color: '#6A6660', lineHeight: '1.45' }}>
-              Ask clinical fitness questions or discuss active diet programs. The Plan-Reason-Audit agent core will critique suggestions safely.
+            <p style={{ fontSize: '0.84rem', color: '#475569', lineHeight: '1.5', margin: 0, fontWeight: 500 }}>
+              Ask clinical nutrition or longevity questions. The 7-agent Plan-Reason-Audit medical board will synthesize PubMed evidence and audit safety constraints.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
               {["What foods should I avoid with high LDL?", "Optimize my protein targets", "Suggest a pre-workout breakfast"].map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => onSendMessage(suggestion)}
-                  style={{
-                    fontSize: '0.75rem',
-                    color: '#6A6660',
-                    backgroundColor: '#FFFFFF',
-                    border: '0.5px solid #dedad4',
-                    padding: '6px 12px',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                  className="hover:border-[#C8A97A] hover:bg-[#F4EFE6]/30"
+                  className="text-xs font-extrabold text-slate-700 hover:text-brand-red bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 px-3.5 py-2 rounded-xl transition cursor-pointer"
                 >
                   {suggestion}
                 </button>
@@ -84,7 +72,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
           </div>
         ) : (
-          /* Message List */
           messages.map((msg, idx) => {
             const isUser = msg.sender === 'user';
             
@@ -98,50 +85,47 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   width: '100%',
                 }}
               >
-                {/* Message Bubble */}
                 <div
                   style={{
-                    maxWidth: '80%',
-                    backgroundColor: isUser ? '#1A1A18' : '#FFFFFF',
-                    color: isUser ? '#FFFFFF' : '#1A1A18',
-                    border: '0.5px solid #dedad4',
-                    borderColor: isUser ? '#1A1A18' : '#dedad4',
-                    borderRadius: '12px',
-                    borderTopRightRadius: isUser ? '2px' : '12px',
-                    borderTopLeftRadius: isUser ? '12px' : '2px',
+                    maxWidth: '82%',
+                    backgroundColor: isUser ? '#E50914' : '#FFFFFF',
+                    color: isUser ? '#FFFFFF' : '#0F172A',
+                    border: isUser ? '1px solid #E50914' : '1px solid #E2E8F0',
+                    borderRadius: '14px',
+                    borderTopRightRadius: isUser ? '3px' : '14px',
+                    borderTopLeftRadius: isUser ? '14px' : '3px',
                     padding: '14px 18px',
-                    fontSize: '0.92rem',
-                    lineHeight: '1.5',
-                    boxShadow: isUser ? 'none' : 'var(--shadow-card)',
+                    fontSize: '0.9rem',
+                    fontWeight: isUser ? 600 : 500,
+                    lineHeight: '1.55',
+                    boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
                     whiteSpace: 'pre-wrap',
                   }}
                 >
                   {msg.text}
                 </div>
 
-                {/* Safety warnings or corrections indicator (if safety checks made corrections) */}
                 {!isUser && msg.corrections && msg.corrections.length > 0 && (
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '0.75rem',
-                    color: '#B25E5E',
-                    backgroundColor: '#F9EFEF',
-                    border: '0.5px solid #B25E5E40',
+                    color: '#E50914',
+                    backgroundColor: '#FEF2F2',
+                    border: '1px solid #FECACA',
                     padding: '4px 12px',
-                    borderRadius: '4px',
+                    borderRadius: '8px',
                     marginTop: '6px',
-                    fontWeight: 600
+                    fontWeight: 700
                   }}>
                     <AlertCircle size={12} />
                     Safety Auditor amended menu suggestions: {msg.corrections.join(', ')}
                   </div>
                 )}
 
-                {/* Collapsible Chain-of-Thought (CoT) Logs */}
                 {!isUser && msg.mcpTrace && msg.mcpTrace.length > 0 && (
-                  <div style={{ width: '100%', maxWidth: '80%', marginTop: '8px' }}>
+                  <div style={{ width: '100%', maxWidth: '82%', marginTop: '8px' }}>
                     <button
                       onClick={() => toggleTrace(idx)}
                       style={{
@@ -149,14 +133,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         alignItems: 'center',
                         gap: '6px',
                         fontSize: '0.75rem',
-                        color: '#6A6660',
+                        color: '#E50914',
                         background: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        fontWeight: 600,
+                        fontWeight: 800,
                         padding: '2px 4px',
                       }}
-                      className="hover:text-[#C8A97A]"
                     >
                       <Cpu size={12} />
                       {expandedTraceIdx === idx ? 'Hide Multi-Agent reasoning chain' : 'Inspect multi-agent reasoning chain'}
@@ -166,25 +149,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     {expandedTraceIdx === idx && (
                       <div style={{
                         marginTop: '6px',
-                        border: '0.5px solid #dedad4',
-                        borderRadius: '6px',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '10px',
                         backgroundColor: '#FFFFFF',
                         overflow: 'hidden',
-                        fontSize: '0.8rem',
+                        fontSize: '0.78rem',
                       }}>
-                        <div style={{ padding: '8px 12px', backgroundColor: '#F7F5F0', borderBottom: '0.5px solid #dedad4', fontWeight: 700, color: '#A58452', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <div style={{ padding: '8px 12px', backgroundColor: '#FEF2F2', borderBottom: '1px solid #FECACA', fontWeight: 800, color: '#E50914', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Trace Logs (Clinical Orchestrator)
                         </div>
                         <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
                           {msg.mcpTrace.map((trace, tIdx) => (
-                            <div key={tIdx} style={{ display: 'flex', gap: '6px', borderBottom: tIdx < msg.mcpTrace!.length - 1 ? '0.5px solid #F4EFE6' : 'none', paddingBottom: '6px' }}>
-                              <span style={{ fontWeight: 700, color: '#1A1A18', whiteSpace: 'nowrap' }}>{trace.sender.replace('Agent', '')}:</span>
-                              <span style={{ color: '#6A6660', fontStyle: 'italic' }}>
+                            <div key={tIdx} style={{ display: 'flex', gap: '6px', borderBottom: tIdx < msg.mcpTrace!.length - 1 ? '1px solid #F1F5F9' : 'none', paddingBottom: '6px' }}>
+                              <span style={{ fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap' }}>{trace.sender.replace('Agent', '')}:</span>
+                              <span style={{ color: '#475569', fontWeight: 500 }}>
                                 {trace.type === 'RESPONSE' ? 'Returned response payload' : 
                                  trace.type === 'CLINICAL_ANALYSIS' ? 'Extracted biomarkers profile' :
                                  trace.type === 'RESEARCH_NOTE' ? 'Synthesized PubMed clinical references' :
                                  trace.type === 'MEAL_PLAN' ? 'Computed calorie macro targets & menu structure' :
-                                 trace.type === 'SAFETY_AUDIT_RESULT' ? `Allergen critique cleared: ${trace.payload.is_cleared ? 'Yes' : 'No'}` :
+                                 trace.type === 'SAFETY_AUDIT_RESULT' ? `Allergen critique cleared: ${trace.payload?.is_cleared ? 'Yes' : 'No'}` :
                                  `Executed protocol ${trace.type}`}
                               </span>
                             </div>
@@ -195,13 +178,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                   </div>
                 )}
 
-                {/* Timestamp */}
                 <span style={{
-                  fontSize: '0.7rem',
-                  color: '#9E9990',
+                  fontSize: '0.68rem',
+                  color: '#64748B',
                   marginTop: '4px',
                   padding: '0 4px',
-                  fontWeight: 500
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-mono)'
                 }}>
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
@@ -210,12 +193,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           })
         )}
 
-        {/* Loading Spinner */}
         {isSending && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start', backgroundColor: '#FFFFFF', border: '0.5px solid #dedad4', padding: '12px 18px', borderRadius: '12px', borderTopLeftRadius: '2px', boxShadow: 'var(--shadow-card)' }}>
-            <Sparkles size={16} className="animate-spin text-[#C8A97A]" style={{ animation: 'spin-slow 2s linear infinite' }} />
-            <span style={{ fontSize: '0.85rem', color: '#6A6660', fontWeight: 500 }}>
-              Plan-Reason-Audit loop executing...
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start', backgroundColor: '#FFFFFF', border: '1px solid #FECACA', padding: '12px 18px', borderRadius: '14px', borderTopLeftRadius: '3px' }}>
+            <Sparkles size={16} className="animate-spin text-brand-red" />
+            <span style={{ fontSize: '0.82rem', color: '#0F172A', fontWeight: 700 }}>
+              Plan-Reason-Audit loop executing across 7 clinical agents...
             </span>
           </div>
         )}
@@ -225,9 +207,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {/* Input Message Form Panel */}
       <form onSubmit={handleSubmit} style={{
-        padding: '16px 24px',
+        padding: '16px 20px',
         backgroundColor: '#FFFFFF',
-        borderTop: '0.5px solid #dedad4',
+        borderTop: '1px solid #E2E8F0',
         display: 'flex',
         gap: '12px',
         alignItems: 'center'
@@ -236,44 +218,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Ask clinical diet planner or coach details..."
+          placeholder="Ask clinical diet planner or longevity board..."
           disabled={isSending}
-          style={{
-            flex: 1,
-            backgroundColor: '#F7F5F0',
-            border: '0.5px solid #dedad4',
-            borderRadius: '6px',
-            padding: '12px 16px',
-            fontSize: '0.9rem',
-            color: '#1A1A18',
-            fontFamily: 'var(--font-sans)',
-            outline: 'none',
-            transition: 'border-color 0.2s ease',
-          }}
-          className="focus:border-[#C8A97A]"
+          className="flex-1 bg-slate-50 border border-slate-300 focus:border-brand-red rounded-xl px-4 py-3 text-sm font-medium text-slate-900 outline-none transition"
         />
         <button
           type="submit"
           disabled={!inputText.trim() || isSending}
-          style={{
-            backgroundColor: '#1A1A18',
-            border: 'none',
-            color: '#FFFFFF',
-            width: '42px',
-            height: '42px',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          className="hover:bg-[#C8A97A] disabled:opacity-50 disabled:bg-[#1A1A18] disabled:cursor-not-allowed"
+          className="bg-brand-red hover:bg-red-700 disabled:opacity-40 text-white w-11 h-11 rounded-xl flex items-center justify-center transition cursor-pointer shadow-md shadow-brand-red/20"
         >
           <Send size={16} />
         </button>
       </form>
-
     </div>
   );
 };

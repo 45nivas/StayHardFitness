@@ -9,7 +9,6 @@ interface WorkoutProgramProps {
 export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
   const isRealData = trainingPlan !== null;
 
-  // Safe default sports-science clinical routine fallback
   const plan: TrainingPlan = trainingPlan || {
     weekly_split: "3-Day Metabolic Strength Conditioning + 2-Day Zone 2 Aerobic Conditioning",
     exercises: [
@@ -35,7 +34,7 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
         instructions: "Maintain a steady, conversation-level pace on a stationary bike or rowing machine. This target aerobic threshold encourages cellular lipid clearance and glycogen storage optimization."
       },
       {
-        name: "Static bird-dog Core Holds",
+        name: "Static Bird-Dog Core Holds",
         sets: "3",
         reps: "10 per side",
         intensity: "RPE 6 (Stability Focus)",
@@ -67,25 +66,20 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
   return (
     <div className="clinical-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px', position: 'relative', overflow: 'hidden' }}>
       {!isRealData && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          zIndex: 10,
-        }}>
-          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             Sample Preview
           </span>
         </div>
       )}
 
       {/* Header section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '0.5px solid #dedad4', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
         <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1A1A18' }}>Clinical Workout Prescription</h3>
-          <p style={{ fontSize: '0.75rem', color: '#6A6660' }}>Custom sports-science program & split</p>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>Clinical Workout Prescription</h3>
+          <p style={{ fontSize: '0.75rem', color: '#64748B', margin: '2px 0 0 0', fontWeight: 500 }}>Custom sports-science program & split</p>
         </div>
-        <div style={{ backgroundColor: '#1A1A18', color: '#C8A97A', padding: '6px', borderRadius: '50%' }}>
+        <div style={{ backgroundColor: '#FEF2F2', color: '#E50914', padding: '8px', borderRadius: '12px', border: '1px solid #FECACA' }}>
           <Dumbbell size={16} />
         </div>
       </div>
@@ -94,7 +88,7 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        opacity: isRealData ? 1 : 0.4,
+        opacity: isRealData ? 1 : 0.45,
         pointerEvents: isRealData ? 'auto' : 'none',
         filter: isRealData ? 'none' : 'blur(0.5px)',
         transition: 'all 0.3s ease'
@@ -102,19 +96,20 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
         {/* Routine Split Badge */}
         <div style={{
           padding: '10px 14px',
-          backgroundColor: '#F4EFE6',
-          border: '0.5px solid #C8A97A',
-          borderRadius: '8px',
+          backgroundColor: '#FEF2F2',
+          border: '1px solid #FECACA',
+          borderLeft: '3px solid #E50914',
+          borderRadius: '10px',
         }}>
-          <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#A58452', letterSpacing: '0.05em', fontWeight: 700, display: 'block' }}>Active Training split</span>
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1A1A18', fontFamily: 'var(--font-display)' }}>
+          <span style={{ fontSize: '0.68rem', textTransform: 'uppercase', color: '#E50914', letterSpacing: '0.06em', fontWeight: 800, display: 'block' }}>Active Training Split</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A', fontFamily: 'var(--font-display)' }}>
             {plan.weekly_split}
           </span>
         </div>
 
         {/* Exercises Checklist */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6A6660' }}>Exercise Prescriptions & Instruction Drawers:</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155' }}>Exercise Prescriptions & Instruction Drawers:</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {plan.exercises.map((ex, idx) => {
               const isExpanded = expandedExercise === idx;
@@ -125,16 +120,14 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
                   key={idx} 
                   onClick={() => toggleExpand(idx)}
                   style={{
-                    border: '0.5px solid #dedad4',
-                    borderRadius: '8px',
-                    backgroundColor: isCompleted ? '#F7F5F0' : '#FFFFFF',
+                    border: isCompleted ? '1px solid #E50914' : '1px solid #E2E8F0',
+                    borderRadius: '10px',
+                    backgroundColor: isCompleted ? '#FEF2F2' : '#FFFFFF',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     overflow: 'hidden'
                   }}
-                  className="hover:border-[#C8A97A]"
                 >
-                  {/* Accordion Header Row */}
                   <div style={{
                     padding: '12px 14px',
                     display: 'flex',
@@ -144,44 +137,44 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div 
                         onClick={(e) => toggleChecked(idx, e)}
-                        style={{ color: isCompleted ? '#4D7C5D' : '#9E9990', transition: 'color 0.15s ease' }}
+                        style={{ color: isCompleted ? '#E50914' : '#94A3B8', transition: 'color 0.15s ease' }}
                       >
                         {isCompleted ? <CheckSquare size={18} /> : <Square size={18} />}
                       </div>
                       <div>
                         <span style={{ 
-                          fontSize: '0.85rem', 
-                          fontWeight: 700, 
-                          color: isCompleted ? '#6A6660' : '#1A1A18',
+                          fontSize: '0.88rem', 
+                          fontWeight: 800, 
+                          color: '#0F172A',
                           textDecoration: isCompleted ? 'line-through' : 'none'
                         }}>
                           {ex.name}
                         </span>
-                        <div style={{ display: 'flex', gap: '8px', fontSize: '0.72rem', color: '#6A6660', marginTop: '2px' }}>
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '0.72rem', color: '#475569', marginTop: '2px', fontWeight: 600 }}>
                           <span>{ex.sets} Sets</span>
                           <span>•</span>
                           <span>{ex.reps} Reps</span>
                           <span>•</span>
-                          <span style={{ color: '#A58452', fontWeight: 600 }}>{ex.intensity}</span>
+                          <span style={{ color: '#E50914', fontWeight: 800 }}>{ex.intensity}</span>
                         </div>
                       </div>
                     </div>
-                    <div style={{ color: '#9E9990' }}>
+                    <div style={{ color: '#64748B' }}>
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
                   </div>
 
-                  {/* Accordion Expandable Instruction Drawer */}
                   {isExpanded && (
                     <div style={{
-                      padding: '0 14px 14px 44px',
-                      borderTop: '0.5px solid #EBE8E3',
-                      backgroundColor: '#FFFFFF',
+                      padding: '10px 14px 14px 44px',
+                      borderTop: '1px solid #E2E8F0',
+                      backgroundColor: '#F8FAFC',
                       fontSize: '0.8rem',
-                      color: '#6A6660',
-                      lineHeight: '1.4',
+                      color: '#334155',
+                      lineHeight: '1.45',
+                      fontWeight: 500
                     }}>
-                      <span style={{ fontWeight: 700, color: '#1A1A18', display: 'block', margin: '10px 0 4px' }}>Form & Execution Instructions:</span>
+                      <span style={{ fontWeight: 800, color: '#0F172A', display: 'block', marginBottom: '4px' }}>Form & Execution Instructions:</span>
                       {ex.instructions}
                     </div>
                   )}
@@ -193,23 +186,24 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
 
         {/* Sports-Science Cautions Box */}
         <div style={{
-          border: '0.5px solid #B25E5E',
-          borderRadius: '8px',
-          backgroundColor: '#F9EFEF',
+          border: '1px solid #FECACA',
+          borderRadius: '10px',
+          backgroundColor: '#FEF2F2',
           padding: '12px 14px',
           display: 'flex',
           flexDirection: 'column',
           gap: '8px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B25E5E' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#E50914' }}>
             <ShieldAlert size={16} />
-            <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>Sports-Science Kinesiology Safety Precautions</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>Sports-Science Kinesiology Safety Precautions</span>
           </div>
-          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '4px', listStyleType: 'none' }}>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '4px', listStyleType: 'none', margin: 0 }}>
             {plan.safety_precautions.map((prec, idx) => (
               <li key={idx} style={{
-                fontSize: '0.75rem',
-                color: '#6A6660',
+                fontSize: '0.76rem',
+                color: '#334155',
+                fontWeight: 500,
                 lineHeight: '1.4',
                 paddingLeft: '12px',
                 position: 'relative'
@@ -221,7 +215,7 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
                   width: '4px',
                   height: '4px',
                   borderRadius: '50%',
-                  backgroundColor: '#B25E5E'
+                  backgroundColor: '#E50914'
                 }}></span>
                 {prec}
               </li>
@@ -244,21 +238,21 @@ export function WorkoutProgram({ trainingPlan }: WorkoutProgramProps) {
           zIndex: 5,
         }}>
           <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            border: '1px solid var(--brand-gold)',
-            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            border: '1px solid #FECACA',
+            borderRadius: '14px',
             padding: '16px 24px',
             textAlign: 'center',
-            boxShadow: '0 4px 12px rgba(26, 26, 24, 0.08)',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
             maxWidth: '280px',
           }}>
-            <Upload size={20} style={{ color: 'var(--brand-gold-dark)' }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Upload a health report to get your personalized workout prescription
+            <Upload size={20} style={{ color: '#E50914' }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
+              Upload a report or load sample panel to unlock your workout prescription
             </span>
           </div>
         </div>

@@ -226,24 +226,30 @@ export default function Workouts() {
       e1rm: {
         label: 'Estimated 1RM (kg)',
         dataKey: 'e1rm',
-        color: '#a78bfa',
+        color: '#e50914',
         yLabel: 'e1RM (kg)',
       },
       weight: {
         label: 'Best Weight (kg)',
         dataKey: 'best_weight',
-        color: '#34d399',
+        color: '#0f172a',
+        yLabel: 'Weight (kg)',
+      },
+      best_weight: {
+        label: 'Best Weight (kg)',
+        dataKey: 'best_weight',
+        color: '#0f172a',
         yLabel: 'Weight (kg)',
       },
       volume: {
         label: 'Session Volume (kg)',
         dataKey: 'volume',
-        color: '#60a5fa',
+        color: '#e50914',
         yLabel: 'Volume (kg)',
       },
     };
 
-    const cfg = PR_DATASET_CONFIGS[prActiveTab];
+    const cfg = PR_DATASET_CONFIGS[prActiveTab] || PR_DATASET_CONFIGS.e1rm;
     const ctx = prChartRef.current.getContext('2d');
     
     prChartInstance.current = new Chart(ctx, {
@@ -254,16 +260,16 @@ export default function Workouts() {
           label: cfg.label,
           data: history.map(d => d[cfg.dataKey]),
           borderColor: cfg.color,
-          backgroundColor: cfg.color + '14',  // 8% opacity fill
+          backgroundColor: 'rgba(229, 9, 20, 0.08)',
           borderWidth: 2.5,
           tension: 0.35,
           fill: true,
           pointRadius: history.map(d => d.is_pr ? 8 : 4),
           pointBackgroundColor: history.map(d =>
-            d.is_pr ? '#f59e0b' : cfg.color
+            d.is_pr ? '#e50914' : cfg.color
           ),
           pointBorderColor: history.map(d =>
-            d.is_pr ? '#f59e0b' : 'transparent'
+            d.is_pr ? '#ffffff' : 'transparent'
           ),
           pointBorderWidth: 2,
         }]
@@ -288,7 +294,7 @@ export default function Workouts() {
                     `Est. 1RM: ${d.e1rm} kg${pr}`,
                     `Best Set: ${d.best_weight}kg × ${d.best_reps} reps`,
                   ];
-                } else if (prActiveTab === 'weight') {
+                } else if (prActiveTab === 'weight' || prActiveTab === 'best_weight') {
                   return [
                     `Best Weight: ${d.best_weight} kg${pr}`,
                     `Reps: ${d.best_reps}`,
@@ -298,8 +304,8 @@ export default function Workouts() {
                 }
               }
             },
-            backgroundColor: '#1e1b4b',
-            borderColor: '#a78bfa',
+            backgroundColor: '#0f172a',
+            borderColor: '#e50914',
             borderWidth: 1,
             padding: 12,
             cornerRadius: 8,
@@ -307,12 +313,12 @@ export default function Workouts() {
         },
         scales: {
           x: {
-            grid: { color: 'rgba(255,255,255,0.04)' },
-            ticks: { color: '#94a3b8', font: { size: 10 } }
+            grid: { color: 'rgba(15,23,42,0.06)' },
+            ticks: { color: '#64748b', font: { size: 10 } }
           },
           y: {
-            grid: { color: 'rgba(255,255,255,0.04)' },
-            ticks: { color: '#94a3b8', font: { size: 10 } },
+            grid: { color: 'rgba(15,23,42,0.06)' },
+            ticks: { color: '#64748b', font: { size: 10 } },
             title: {
               display: true,
               text: cfg.yLabel,
@@ -1301,19 +1307,19 @@ export default function Workouts() {
       {/* PR Progress Modal */}
       <AnimatePresence>
         {prModalOpen && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={handleClosePRModal}>
+          <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={handleClosePRModal}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 text-white shadow-2xl relative flex flex-col overflow-hidden"
+              className="bg-white border border-slate-200 border-t-4 border-t-brand-red rounded-3xl max-w-lg w-full p-6 text-slate-900 shadow-2xl relative flex flex-col overflow-hidden"
               style={{ width: '480px' }}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
                 onClick={handleClosePRModal}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer font-bold text-sm"
+                className="absolute top-4 right-4 text-slate-500 hover:text-brand-red bg-slate-100 hover:bg-red-50 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer font-bold text-sm"
               >
                 ✕
               </button>
@@ -1323,22 +1329,22 @@ export default function Workouts() {
                 <span className="text-[9px] font-black uppercase tracking-widest text-brand-red block mb-1">
                   Strength Progression
                 </span>
-                <h3 className="text-xl font-black text-white m-0 uppercase tracking-tight">
+                <h3 className="text-xl font-black text-slate-900 m-0 uppercase tracking-tight">
                   {prExercise}
                 </h3>
                 {prData && (
                   <div className="mt-2.5 flex items-center">
-                    <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center space-x-1">
+                    <span className="text-[10px] font-black text-brand-red bg-red-50 border border-red-200 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center space-x-1">
                       <span>🏆 Current PR:</span>
-                      <span className="text-white font-bold">{prData.current_pr_e1rm} kg</span>
-                      <span className="text-slate-400 font-semibold normal-case">e1RM</span>
+                      <span className="text-slate-900 font-extrabold">{prData.current_pr_e1rm} kg</span>
+                      <span className="text-slate-500 font-semibold normal-case">e1RM</span>
                     </span>
                   </div>
                 )}
               </div>
 
               {/* Toggle Buttons */}
-              <div className="flex bg-slate-950/60 p-1 rounded-xl mb-5 border border-slate-800/80">
+              <div className="flex bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200">
                 {[
                   { id: 'e1rm', label: 'Est. 1RM' },
                   { id: 'best_weight', label: 'Best Weight' },
@@ -1349,8 +1355,8 @@ export default function Workouts() {
                     onClick={() => setPrActiveTab(tab.id)}
                     className={`flex-1 py-1.5 text-center text-xs font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
                       prActiveTab === tab.id
-                        ? 'bg-purple-650 text-white shadow-md'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-brand-red text-white shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {tab.label}
@@ -1359,25 +1365,25 @@ export default function Workouts() {
               </div>
 
               {/* Main Body / Graph */}
-              <div className="h-[220px] flex items-center justify-center relative bg-slate-950/20 border border-slate-850/50 rounded-2xl p-4">
+              <div className="h-[220px] flex items-center justify-center relative bg-slate-50 border border-slate-200 rounded-2xl p-4">
                 {prData ? (
                   prData.history && prData.history.length > 0 ? (
                     <canvas ref={prChartRef}></canvas>
                   ) : (
-                    <div className="text-center py-8 text-xs text-slate-400 font-semibold">
+                    <div className="text-center py-8 text-xs text-slate-500 font-semibold">
                       No history found for this exercise.
                     </div>
                   )
                 ) : (
                   <div className="flex flex-col items-center space-y-2">
-                    <Loader2 className="w-6 h-6 animate-spin text-purple-450" />
+                    <Loader2 className="w-6 h-6 animate-spin text-brand-red" />
                     <p className="text-xs text-slate-500 font-semibold">Retrieving telemetry data...</p>
                   </div>
                 )}
               </div>
 
               {/* Footer / Caption */}
-              <div className="mt-5 flex items-center justify-between text-[10px] text-slate-400 font-bold">
+              <div className="mt-5 flex items-center justify-between text-[10px] text-slate-500 font-bold">
                 <span className="flex items-center space-x-1">
                   <span>🏆</span>
                   <span>= Personal Record session</span>
@@ -1396,30 +1402,30 @@ export default function Workouts() {
       {/* Video Modal */}
       <AnimatePresence>
         {videoModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleCloseVideoModal}>
+          <div className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleCloseVideoModal}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-slate-950 border border-purple-500/25 rounded-3xl p-5 w-full max-w-lg shadow-2xl relative"
+              className="bg-white border border-slate-200 border-t-4 border-t-brand-red rounded-3xl p-5 w-full max-w-lg shadow-2xl relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={handleCloseVideoModal}
-                className="absolute top-3.5 right-4 text-slate-500 hover:text-slate-200 text-xl font-bold bg-transparent border-none cursor-pointer p-1"
+                className="absolute top-3.5 right-4 text-slate-400 hover:text-brand-red text-xl font-bold bg-transparent border-none cursor-pointer p-1"
               >
                 ✕
               </button>
               
               <div className="mb-4 pr-8">
-                <h3 className="text-sm font-semibold text-slate-200 capitalize">
-                  Form Guide: <span className="text-purple-400 font-bold">{videoModalExercise}</span>
+                <h3 className="text-sm font-extrabold text-slate-900 capitalize">
+                  Form Guide: <span className="text-brand-red font-black">{videoModalExercise}</span>
                 </h3>
               </div>
 
               {!videoNoResult && videoModalUrl ? (
                 <iframe 
-                  className="w-full aspect-video border-none rounded-xl bg-black"
+                  className="w-full aspect-video border border-slate-200 rounded-xl bg-black"
                   src={videoModalUrl}
                   allowFullScreen
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1430,7 +1436,7 @@ export default function Workouts() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 space-y-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-purple-450" />
+                  <Loader2 className="w-6 h-6 animate-spin text-brand-red" />
                   <p className="text-xs text-slate-500 font-semibold">Retrieving guide video...</p>
                 </div>
               )}

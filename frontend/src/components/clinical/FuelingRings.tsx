@@ -15,42 +15,35 @@ interface FuelingRingsProps {
 }
 
 export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, isRealTargets }) => {
-  // Ensure targets are never zero to avoid division by zero
   const tgtCalories = targets.calories || 2000;
   const tgtProtein = targets.protein || 130;
   const tgtCarbs = targets.carbs || 200;
   const tgtFats = targets.fats || 70;
 
-  // Calculate percentages (cap at 100% visually for offsets)
   const pctCalories = Math.min(1, consumed.calories / tgtCalories);
   const pctProtein = Math.min(1, consumed.protein / tgtProtein);
   const pctCarbs = Math.min(1, consumed.carbs / tgtCarbs);
   const pctFats = Math.min(1, consumed.fats / tgtFats);
 
-  // SVG concentric layout math
+  // Cohesive Red & Carbon Slate concentric rings
   const rings = [
-    { name: 'Calories', radius: 80, progress: pctCalories, color: '#C8A97A', unit: 'kcal', target: tgtCalories, current: consumed.calories },
-    { name: 'Protein', radius: 64, progress: pctProtein, color: '#E07A5F', unit: 'g', target: tgtProtein, current: consumed.protein },
-    { name: 'Carbs', radius: 48, progress: pctCarbs, color: '#3D5A80', unit: 'g', target: tgtCarbs, current: consumed.carbs },
-    { name: 'Fats', radius: 32, progress: pctFats, color: '#81B29A', unit: 'g', target: tgtFats, current: consumed.fats },
+    { name: 'Calories', radius: 80, progress: pctCalories, color: '#E50914', unit: 'kcal', target: tgtCalories, current: consumed.calories },
+    { name: 'Protein', radius: 64, progress: pctProtein, color: '#0F172A', unit: 'g', target: tgtProtein, current: consumed.protein },
+    { name: 'Carbs', radius: 48, progress: pctCarbs, color: '#EF4444', unit: 'g', target: tgtCarbs, current: consumed.carbs },
+    { name: 'Fats', radius: 32, progress: pctFats, color: '#64748B', unit: 'g', target: tgtFats, current: consumed.fats },
   ];
 
   return (
     <div className="clinical-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', overflow: 'hidden' }}>
       {!isRealTargets && (
-        <div style={{
-          position: 'absolute',
-          top: '12px',
-          right: '12px',
-          zIndex: 10,
-        }}>
-          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+          <span className="stat-pill accent-gold" style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             Sample Preview
           </span>
         </div>
       )}
 
-      <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1A1A18', borderBottom: '0.5px solid #dedad4', paddingBottom: '10px' }}>
+      <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0F172A', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px', margin: 0 }}>
         Fueling Rings & Macro Progress
       </h3>
 
@@ -60,7 +53,7 @@ export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, i
         justifyContent: 'space-around',
         gap: '24px',
         flexWrap: 'wrap',
-        opacity: isRealTargets ? 1 : 0.4,
+        opacity: isRealTargets ? 1 : 0.45,
         pointerEvents: isRealTargets ? 'auto' : 'none',
         filter: isRealTargets ? 'none' : 'blur(0.5px)',
         transition: 'all 0.3s ease'
@@ -73,16 +66,14 @@ export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, i
               const strokeOffset = circ * (1 - ring.progress);
               return (
                 <g key={ring.name}>
-                  {/* Track ring background (very faint) */}
                   <circle
                     cx="90"
                     cy="90"
                     r={ring.radius}
                     fill="transparent"
-                    stroke="#EBE8E3"
+                    stroke="#F1F5F9"
                     strokeWidth="10"
                   />
-                  {/* Active progress ring */}
                   <circle
                     cx="90"
                     cy="90"
@@ -102,7 +93,6 @@ export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, i
             })}
           </svg>
           
-          {/* Inner Avatar Ring Center Label */}
           <div style={{
             position: 'absolute',
             top: '50%',
@@ -112,11 +102,11 @@ export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, i
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <span style={{ fontSize: '0.65rem', color: '#9E9990', fontWeight: 600, textTransform: 'uppercase' }}>Consumed</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1A1A18', lineHeight: '1' }}>
+            <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Consumed</span>
+            <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0F172A', lineHeight: '1.1', fontFamily: 'var(--font-mono)' }}>
               {consumed.calories}
             </span>
-            <span style={{ fontSize: '0.6rem', color: '#6A6660', fontWeight: 500 }}>
+            <span style={{ fontSize: '0.62rem', color: '#475569', fontWeight: 700 }}>
               / {tgtCalories} kcal
             </span>
           </div>
@@ -127,22 +117,23 @@ export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, i
           {rings.map((ring) => (
             <div key={ring.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: ring.color }} />
-                <span style={{ color: '#6A6660', fontWeight: 500 }}>{ring.name}</span>
+                <div style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: ring.color }} />
+                <span style={{ color: '#334155', fontWeight: 700 }}>{ring.name}</span>
               </div>
-              <div style={{ color: '#1A1A18', fontWeight: 600 }}>
+              <div style={{ color: '#0F172A', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
                 <span>{ring.current}</span>
-                <span style={{ fontSize: '0.75rem', color: '#9E9990', fontWeight: 400, marginLeft: '2px' }}>
+                <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600, marginLeft: '2px' }}>
                   / {ring.target}{ring.unit}
                 </span>
                 <span style={{
-                  fontSize: '0.75rem',
+                  fontSize: '0.72rem',
                   color: ring.color,
-                  backgroundColor: `${ring.color}15`,
-                  padding: '2px 6px',
-                  borderRadius: '10px',
+                  backgroundColor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  padding: '2px 7px',
+                  borderRadius: '999px',
                   marginLeft: '8px',
-                  fontWeight: 700
+                  fontWeight: 800
                 }}>
                   {Math.round(ring.progress * 100)}%
                 </span>
@@ -166,21 +157,21 @@ export const FuelingRings: React.FC<FuelingRingsProps> = ({ targets, consumed, i
           zIndex: 5,
         }}>
           <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            border: '1px solid var(--brand-gold)',
-            borderRadius: 'var(--radius-md)',
+            backgroundColor: 'rgba(255, 255, 255, 0.96)',
+            border: '1px solid #FECACA',
+            borderRadius: '14px',
             padding: '16px 24px',
             textAlign: 'center',
-            boxShadow: '0 4px 12px rgba(26, 26, 24, 0.08)',
+            boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
             maxWidth: '280px',
           }}>
-            <Upload size={20} style={{ color: 'var(--brand-gold-dark)' }} />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Upload a health report to see your real calorie & macro targets
+            <Upload size={20} style={{ color: '#E50914' }} />
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
+              Upload a report or load sample panel to unlock calorie & macro targets
             </span>
           </div>
         </div>
